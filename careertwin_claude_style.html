@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerTwin · 我的求职分身</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Serif+Display:ital@0;1&family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --cream:    #FAF8F3;
+  --cream-2:  #F3EFE6;
+  --cream-3:  #EAE3D6;
+  --ink:      #1C1814;
+  --ink-2:    #3D3529;
+  --ink-3:    #6B5F50;
+  --ink-4:    #9C9080;
+  --copper:   #A0622A;
+  --copper-l: #C8844A;
+  --border:   rgba(60,45,30,0.12);
+  --border-m: rgba(60,45,30,0.22);
+}
+
+/* ── RESET ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* paper grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+}
+
+/* ── SELECTION ── */
+::selection { background: var(--copper-l); color: white; }
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 64px;
+  background: rgba(250, 248, 243, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  transition: padding 0.3s;
+}
+
+.nav-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+  text-decoration: none;
+}
+.nav-logo em { font-style: italic; color: var(--copper); }
+
+.nav-links {
+  display: flex; align-items: center; gap: 40px;
+  list-style: none;
+}
+.nav-links a {
+  font-size: 13px; font-weight: 400;
+  color: var(--ink-3); text-decoration: none;
+  letter-spacing: 0.2px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--ink); }
+
+.nav-cta {
+  font-size: 13px; font-weight: 500;
+  color: var(--ink) !important;
+  background: transparent;
+  border: 1px solid var(--border-m);
+  padding: 9px 22px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+.nav-cta:hover {
+  background: var(--ink);
+  color: var(--cream) !important;
+  border-color: var(--ink);
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 64px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* large background word */
+.hero-bg-word {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-52%, -50%);
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(180px, 28vw, 380px);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(60,45,30,0.06);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  letter-spacing: -8px;
+}
+
+.hero-eyebrow {
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 28px;
+  font-weight: 400;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.hero-h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(52px, 8vw, 112px);
+  line-height: 1.02;
+  letter-spacing: -2px;
+  color: var(--ink);
+  margin-bottom: 40px;
+  max-width: 860px;
+}
+
+.hero-h1 em {
+  font-style: italic;
+  color: var(--copper);
+}
+
+.hero-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.hero-desc {
+  font-size: 16px;
+  color: var(--ink-3);
+  line-height: 1.8;
+  max-width: 420px;
+  font-weight: 300;
+}
+
+.hero-actions {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 12px;
+  flex-shrink: 0;
+}
+
+.btn-primary {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--cream);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 14px 32px;
+  border-radius: 100px;
+  text-decoration: none;
+  border: none; cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Noto Sans SC', sans-serif;
+  letter-spacing: 0.3px;
+}
+.btn-primary:hover {
+  background: var(--ink-2);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-block;
+  color: var(--ink-3);
+  font-size: 13px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: all 0.2s;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.btn-ghost:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.hero-scroll-hint {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-top: 8px;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+/* ── DIVIDER ── */
+.rule {
+  height: 1px;
+  background: var(--border);
+  margin: 0 64px;
+}
+
+/* ── INTRO STRIP ── */
+.intro-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.intro-item {
+  padding: 48px 64px;
+  border-right: 1px solid var(--border);
+}
+.intro-item:last-child { border-right: none; }
+.intro-num {
+  font-family: 'Lora', serif;
+  font-size: 40px;
+  font-weight: 400;
+  color: var(--copper);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.intro-item p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.7;
+}
+
+/* ── SECTION ── */
+.section {
+  padding: 120px 64px;
+}
+.section + .section {
+  border-top: 1px solid var(--border);
+}
+
+.sec-tag {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 32px;
+  font-weight: 400;
+}
+
+.sec-h {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 5vw, 64px);
+  line-height: 1.08;
+  letter-spacing: -1px;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+.sec-h em { font-style: italic; color: var(--copper); }
+
+.sec-lead {
+  font-size: 17px;
+  color: var(--ink-3);
+  max-width: 560px;
+  line-height: 1.8;
+  font-weight: 300;
+  margin-bottom: 72px;
+}
+
+/* ── HOW IT WORKS ── */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.how-step {
+  background: var(--cream);
+  padding: 48px 36px 56px;
+  transition: background 0.25s;
+}
+.how-step:hover { background: var(--cream-2); }
+
+.step-index {
+  font-family: 'Lora', serif;
+  font-size: 13px;
+  color: var(--ink-4);
+  margin-bottom: 36px;
+  font-weight: 400;
+}
+.step-icon-char {
+  font-size: 28px;
+  margin-bottom: 20px;
+  display: block;
+  filter: grayscale(0.3);
+}
+.how-step h3 {
+  font-family: 'Lora', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+.how-step p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+/* ── RADAR SECTION ── */
+.radar-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: start;
+}
+
+.radar-tabs {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  width: fit-content;
+  padding: 3px;
+  margin-bottom: 40px;
+  background: var(--cream-2);
+}
+.rtab {
+  padding: 9px 24px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--ink-3);
+  font-family: 'Noto Sans SC', sans-serif;
+  transition: all 0.2s;
+  letter-spacing: 0.2px;
+}
+.rtab.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.rpane { display: none; }
+.rpane.active { display: block; }
+
+/* Intent form */
+.intent-form {
+  border: 1px solid var(--border);
+  background: var(--cream-2);
+  padding: 36px;
+  border-radius: 3px;
+}
+.field-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 12px;
+  display: block;
+  font-weight: 400;
+}
+.field-group { margin-bottom: 28px; }
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.itag {
+  padding: 6px 16px;
+  border: 1px solid var(--border-m);
+  border-radius: 100px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink-3);
+  background: var(--cream);
+  transition: all 0.15s;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.itag:hover { border-color: var(--ink-3); color: var(--ink); }
+.itag.on { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+.salary-inputs {
+  display: flex; align-items: center; gap: 10px;
+}
+.salary-inputs input {
+  width: 80px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-m);
+  background: var(--cream);
+  border-radius: 3px;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: 'Noto Sans SC', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.salary-inputs input:focus { border-color: var(--ink-3); }
+.salary-inputs span { font-size: 13px; color: var(--ink-4); }
+
+.search-btn-main {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px;
+  background: var(--ink);
+  color: var(--cream);
+  border: none;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Noto Sans SC', sans-serif;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.search-btn-main:hover { background: var(--ink-2); }
+
+/* Result cards */
+.result-cards { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+.r-card {
+  background: var(--cream);
+  padding: 24px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-left: 3px solid transparent;
+}
+.r-card:hover { background: var(--cream-2); border-left-color: var(--copper); }
+.r-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.r-title { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; color: var(--ink); }
+.r-salary { font-family: 'Lora', serif; font-size: 15px; color: var(--copper); font-weight: 500; }
+.r-company { font-size: 12px; color: var(--ink-4); margin-bottom: 12px; }
+.r-match-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.r-tag { font-size: 11px; padding: 2px 10px; border-radius: 100px; }
+.r-tag.ok { background: rgba(160,98,42,0.08); color: var(--copper); }
+.r-tag.warn { background: rgba(200,150,50,0.1); color: #8B6020; }
+.r-tag.miss { background: rgba(150,60,60,0.08); color: #8B2020; }
+.r-score { font-size: 11px; color: var(--ink-4); letter-spacing: 1px; }
+
+/* Twin discover cards */
+.discover-cards { display: flex; flex-direction: column; gap: 1px; background: var(--border); }
+.d-card {
+  background: var(--cream);
+  padding: 28px 32px;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.d-card.cross { border-left-color: var(--copper); }
+.d-card.salary-up { border-left-color: #6B9E6B; }
+.d-card.niche { border-left-color: #9E856B; }
+.d-card:hover { background: var(--cream-2); }
+.d-badge {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: block;
+  font-weight: 400;
+}
+.cross .d-badge { color: var(--copper); }
+.salary-up .d-badge { color: #6B9E6B; }
+.niche .d-badge { color: #9E856B; }
+.d-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+.d-co { font-size: 12px; color: var(--ink-4); margin-bottom: 14px; }
+.d-why {
+  font-size: 13px; color: var(--ink-3); line-height: 1.65;
+  padding: 12px 16px;
+  background: var(--cream-2);
+  border-radius: 2px;
+  font-style: italic;
+  font-family: 'Lora', serif;
+}
+.d-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.d-salary { font-family: 'Lora', serif; font-size: 15px; color: var(--copper); font-weight: 500; }
+.d-cta { font-size: 12px; color: var(--ink-3); border-bottom: 1px solid var(--border); padding-bottom: 1px; cursor: pointer; transition: color 0.2s; }
+.d-cta:hover { color: var(--ink); }
+
+/* ── RADAR DAILY ── */
+.daily-layout {
+  display: grid;
+  grid-template-columns: 5fr 4fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.push-features {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  margin-top: 48px;
+}
+.pf-item { display: flex; gap: 20px; align-items: flex-start; }
+.pf-num {
+  font-family: 'Lora', serif;
+  font-size: 11px;
+  color: var(--ink-4);
+  margin-top: 3px;
+  flex-shrink: 0;
+  width: 20px;
+}
+.pf-item h4 {
+  font-family: 'Lora', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.pf-item p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* Phone mockup */
+.phone-outer {
+  display: flex;
+  justify-content: center;
+}
+.phone {
+  width: 296px;
+  background: #1A1814;
+  border-radius: 40px;
+  padding: 10px;
+  box-shadow:
+    0 32px 80px rgba(28,24,20,0.3),
+    0 0 0 1px rgba(255,255,255,0.06);
+}
+.phone-inner {
+  background: #EDEBE6;
+  border-radius: 32px;
+  overflow: hidden;
+}
+.phone-bar {
+  background: #EDEBE6;
+  padding: 14px 20px 6px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.phone-time { font-size: 13px; font-weight: 600; color: #1C1814; }
+.phone-icons { font-size: 10px; color: #666; }
+.wc-bar { background: white; padding: 10px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.wc-back-btn { font-size: 16px; color: #1A6FBA; }
+.wc-chat-nm { font-size: 14px; font-weight: 600; color: #1C1814; flex: 1; text-align: center; }
+.wc-dots { font-size: 16px; color: #666; }
+.wc-body { background: #EDEBE6; padding: 14px 10px; min-height: 400px; }
+.wc-ts { text-align: center; font-size: 10px; color: #999; margin-bottom: 14px; }
+.wc-row { display: flex; align-items: flex-start; gap: 7px; }
+.wc-av { width: 33px; height: 33px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.bubble {
+  background: white;
+  border-radius: 3px 12px 12px 12px;
+  max-width: 230px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.b-head {
+  background: var(--ink);
+  padding: 10px 13px;
+  color: var(--cream);
+}
+.b-head h5 { font-size: 11px; font-weight: 600; margin-bottom: 1px; font-family: 'Lora', serif; }
+.b-head p { font-size: 9px; opacity: 0.6; }
+.b-content { padding: 10px 13px; }
+.b-section-head { font-size: 9px; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.5px; }
+.intent-head { color: #5A8A5A; }
+.twin-head { color: var(--copper); }
+.b-job-row {
+  background: #F5F3EE;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 5px;
+}
+.b-job-name { font-size: 10px; font-weight: 600; color: #1C1814; margin-bottom: 1px; }
+.b-job-info { font-size: 9px; color: #888; }
+.b-job-match { font-size: 9px; color: #5A8A5A; margin-top: 2px; }
+.b-job-why {
+  font-size: 9px; color: var(--copper); margin-top: 4px;
+  background: rgba(160,98,42,0.06);
+  padding: 4px 6px; border-radius: 3px; line-height: 1.4;
+  font-style: italic;
+}
+.b-divider { height: 1px; background: rgba(0,0,0,0.05); margin: 8px 0; }
+.b-btns { display: flex; }
+.b-btn { flex: 1; text-align: center; padding: 8px 4px; font-size: 10px; font-weight: 600; cursor: pointer; color: #1A6FBA; }
+.b-btn:first-child { border-right: 1px solid rgba(0,0,0,0.05); }
+
+/* ── FEATURES ── */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.feat-card {
+  background: var(--cream);
+  padding: 40px 36px 48px;
+  transition: background 0.2s;
+}
+.feat-card:hover { background: var(--cream-2); }
+.feat-card-tag {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 20px;
+  display: block;
+  font-weight: 400;
+}
+.feat-card h3 {
+  font-family: 'Lora', serif;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.feat-card p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+/* ── PRICING ── */
+.pricing-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  max-width: 720px;
+  margin-top: 64px;
+}
+.p-card { background: var(--cream); padding: 48px 44px; }
+.p-card.dark {
+  background: var(--ink);
+  color: var(--cream);
+}
+.p-plan-name {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 28px;
+  display: block;
+  font-weight: 400;
+}
+.p-card.dark .p-plan-name { color: var(--copper-l); }
+.p-price {
+  font-family: 'Lora', serif;
+  font-size: 52px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.p-card.dark .p-price { color: var(--cream); }
+.p-period {
+  font-size: 13px;
+  color: var(--ink-4);
+  margin-bottom: 36px;
+  font-weight: 300;
+}
+.p-card.dark .p-period { color: rgba(250,248,243,0.45); }
+.p-features { list-style: none; }
+.p-features li {
+  font-size: 13px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink-3);
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 300;
+}
+.p-card.dark .p-features li {
+  color: rgba(250,248,243,0.6);
+  border-color: rgba(250,248,243,0.08);
+}
+.p-features li::before { content: '—'; color: var(--copper); font-size: 12px; flex-shrink: 0; font-family: 'Lora', serif; }
+.p-btn {
+  display: block; margin-top: 32px; text-align: center;
+  padding: 14px; border-radius: 100px;
+  font-size: 13px; font-weight: 500;
+  font-family: 'Noto Sans SC', sans-serif;
+  text-decoration: none; cursor: pointer; transition: all 0.2s;
+}
+.p-btn-outline { border: 1px solid var(--border-m); color: var(--ink); background: none; }
+.p-btn-outline:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+.p-btn-solid { background: var(--cream); color: var(--ink); border: none; }
+.p-btn-solid:hover { background: var(--cream-3); }
+
+/* ── WAITLIST ── */
+.waitlist-wrap {
+  background: var(--ink);
+  margin: 0 0 0 0;
+  padding: 120px 64px;
+  position: relative;
+  overflow: hidden;
+}
+.waitlist-bg-word {
+  position: absolute;
+  bottom: -60px; right: -20px;
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(160px, 22vw, 300px);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(250,248,243,0.05);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: -6px;
+}
+.waitlist-wrap h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.08;
+  letter-spacing: -1.5px;
+  color: var(--cream);
+  margin-bottom: 20px;
+  max-width: 640px;
+}
+.waitlist-wrap h2 em { font-style: italic; color: var(--copper-l); }
+.waitlist-wrap p {
+  font-size: 16px;
+  color: rgba(250,248,243,0.5);
+  margin-bottom: 52px;
+  font-weight: 300;
+  max-width: 440px;
+  line-height: 1.7;
+}
+.wl-form {
+  display: flex; gap: 0;
+  max-width: 480px;
+  border: 1px solid rgba(250,248,243,0.15);
+  border-radius: 100px;
+  overflow: hidden;
+  background: rgba(250,248,243,0.05);
+  backdrop-filter: blur(8px);
+}
+.wl-form input {
+  flex: 1; padding: 16px 24px;
+  background: none; border: none;
+  color: var(--cream); font-size: 14px;
+  font-family: 'Noto Sans SC', sans-serif;
+  outline: none;
+}
+.wl-form input::placeholder { color: rgba(250,248,243,0.3); }
+.wl-form button {
+  padding: 12px 28px;
+  background: var(--copper);
+  color: white; border: none;
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; border-radius: 100px;
+  font-family: 'Noto Sans SC', sans-serif;
+  margin: 4px; transition: background 0.2s;
+}
+.wl-form button:hover { background: var(--copper-l); }
+.wl-social {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 28px;
+  color: rgba(250,248,243,0.35);
+  font-size: 12px;
+}
+.wl-avatars { display: flex; }
+.wl-av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--ink-3); border: 2px solid var(--ink);
+  margin-left: -6px; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; color: var(--cream-2);
+  font-weight: 600;
+}
+.wl-av:first-child { margin-left: 0; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--ink);
+  border-top: 1px solid rgba(250,248,243,0.08);
+  padding: 32px 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: rgba(250,248,243,0.25);
+}
+.footer-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  color: rgba(250,248,243,0.5);
+}
+.footer-logo em { font-style: italic; color: var(--copper-l); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { opacity: 0; animation: fadeUp 0.8s cubic-bezier(0.22,1,0.36,1) forwards; }
+.d1 { animation-delay: 0.1s; }
+.d2 { animation-delay: 0.25s; }
+.d3 { animation-delay: 0.4s; }
+.d4 { animation-delay: 0.55s; }
+.d5 { animation-delay: 0.7s; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+  nav { padding: 18px 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 0 24px 60px; }
+  .hero-bottom { flex-direction: column; align-items: flex-start; }
+  .hero-actions { align-items: flex-start; }
+  .rule, .section { padding: 72px 24px; }
+  .intro-strip { grid-template-columns: 1fr; }
+  .intro-item { border-right: none; border-bottom: 1px solid var(--border); padding: 36px 24px; }
+  .how-grid { grid-template-columns: 1fr 1fr; }
+  .radar-layout { grid-template-columns: 1fr; }
+  .daily-layout { grid-template-columns: 1fr; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .pricing-layout { grid-template-columns: 1fr; }
+  .waitlist-wrap { padding: 72px 24px; }
+  .wl-form { flex-direction: column; border-radius: 12px; }
+  .wl-form button { border-radius: 8px; margin: 0; width: 100%; }
+  footer { flex-direction: column; gap: 10px; padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Career<em>Twin</em></a>
+  <ul class="nav-links">
+    <li><a href="#radar">岗位雷达</a></li>
+    <li><a href="#daily">每日推送</a></li>
+    <li><a href="#features">功能</a></li>
+    <li><a href="#pricing">定价</a></li>
+    <li><a href="#waitlist" class="nav-cta">抢先体验</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-word" aria-hidden="true">分身</div>
+
+  <div class="hero-eyebrow fade-up">AI 求职操作系统</div>
+
+  <h1 class="hero-h1 fade-up d1">
+    你的职业历程<br>
+    值得一个<em>分身</em>
+  </h1>
+
+  <div class="hero-bottom">
+    <p class="hero-desc fade-up d2">
+      上传历年简历，15 分钟构建「职场数字分身」。分身了解你所有的经历、技能与成就——并据此，为每一个 JD 生成最合适的你。
+    </p>
+    <div class="hero-actions fade-up d3">
+      <a href="#waitlist" class="btn-primary">免费构建我的分身</a>
+      <a href="#radar" class="btn-ghost">了解岗位雷达 ↓</a>
+      <span class="hero-scroll-hint">向下探索</span>
+    </div>
+  </div>
+</section>
+
+<!-- INTRO STRIP -->
+<div class="intro-strip">
+  <div class="intro-item">
+    <div class="intro-num">15'</div>
+    <p>首次构建分身的时间<br>此后永久复用，无需重复劳动</p>
+  </div>
+  <div class="intro-item">
+    <div class="intro-num">3×</div>
+    <p>分身匹配的岗位投递转化率<br>是普通简历投递的三倍</p>
+  </div>
+  <div class="intro-item">
+    <div class="intro-num">∞</div>
+    <p>可生成的定制简历版本数<br>一次构建，无限适配</p>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <span class="sec-tag">How It Works</span>
+  <h2 class="sec-h">四步，从分身<br>到 <em>Offer</em></h2>
+  <p class="sec-lead">你只需要做一件事：上传简历，然后回答几个问题。剩下的交给分身。</p>
+
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="step-index">01</div>
+      <span class="step-icon-char">📄</span>
+      <h3>上传<br>构建分身</h3>
+      <p>上传历年所有简历，AI 解析合并、去重，通过结构化追问补充细节与量化数据，构建完整的职场知识库。</p>
+    </div>
+    <div class="how-step">
+      <div class="step-index">02</div>
+      <span class="step-icon-char">⚙️</span>
+      <h3>配置<br>求职意向</h3>
+      <p>设定薪资范围、目标城市、行业偏好、职类方向。雷达从此开始全自动运转，不需要再手动刷平台。</p>
+    </div>
+    <div class="how-step">
+      <div class="step-index">03</div>
+      <span class="step-icon-char">📲</span>
+      <h3>每日推送<br>新岗位</h3>
+      <p>每天早 9 点微信接收今日匹配岗位，包含意向精准匹配，以及分身发现的——你自己也没想到能做的岗位。</p>
+    </div>
+    <div class="how-step">
+      <div class="step-index">04</div>
+      <span class="step-icon-char">✦</span>
+      <h3>一键生成<br>直接投递</h3>
+      <p>对感兴趣的岗位，一键生成针对该 JD 的定制简历、网申每题答案、个人作品集。下载，投递。</p>
+    </div>
+  </div>
+</section>
+
+<!-- RADAR SECTION -->
+<section class="section" id="radar">
+  <span class="sec-tag">Job Radar · 岗位雷达</span>
+  <h2 class="sec-h">两种方式<br>找到所有你该投的岗位</h2>
+  <p class="sec-lead">一种按你告诉我的，一种按你真实的能力。后者往往更令人意外。</p>
+
+  <div class="radar-layout">
+    <div>
+      <div class="radar-tabs">
+        <button class="rtab active" onclick="switchTab(0)">意向搜索</button>
+        <button class="rtab" onclick="switchTab(1)">分身反向匹配</button>
+      </div>
+
+      <!-- Intent pane -->
+      <div class="rpane active" id="p0">
+        <div class="intent-form">
+          <div class="field-group">
+            <span class="field-label">目标城市</span>
+            <div class="tag-row">
+              <span class="itag on" onclick="this.classList.toggle('on')">北京</span>
+              <span class="itag" onclick="this.classList.toggle('on')">上海</span>
+              <span class="itag" onclick="this.classList.toggle('on')">深圳</span>
+              <span class="itag" onclick="this.classList.toggle('on')">杭州</span>
+              <span class="itag" onclick="this.classList.toggle('on')">可远程</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <span class="field-label">薪资范围（K/月）</span>
+            <div class="salary-inputs">
+              <input type="number" placeholder="15" id="smin">
+              <span>—</span>
+              <input type="number" placeholder="35" id="smax">
+              <span>K</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <span class="field-label">行业</span>
+            <div class="tag-row">
+              <span class="itag on" onclick="this.classList.toggle('on')">互联网</span>
+              <span class="itag" onclick="this.classList.toggle('on')">消费品</span>
+              <span class="itag" onclick="this.classList.toggle('on')">金融科技</span>
+              <span class="itag" onclick="this.classList.toggle('on')">出海</span>
+              <span class="itag" onclick="this.classList.toggle('on')">不限</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <span class="field-label">职类</span>
+            <div class="tag-row">
+              <span class="itag on" onclick="this.classList.toggle('on')">产品经理</span>
+              <span class="itag" onclick="this.classList.toggle('on')">增长</span>
+              <span class="itag" onclick="this.classList.toggle('on')">运营</span>
+              <span class="itag" onclick="this.classList.toggle('on')">市场</span>
+            </div>
+          </div>
+          <button class="search-btn-main" onclick="doSearch(this)">全网搜索匹配岗位</button>
+        </div>
+      </div>
+
+      <!-- Twin pane -->
+      <div class="rpane" id="p1">
+        <div style="margin-bottom:20px;padding:20px 24px;background:var(--cream-2);border:1px solid var(--border);">
+          <span class="field-label" style="margin-bottom:10px;">你的分身关键词</span>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span style="padding:5px 14px;border:1px solid var(--border-m);border-radius:100px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;">用户增长 +35% DAU</span>
+            <span style="padding:5px 14px;border:1px solid var(--border-m);border-radius:100px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;">SQL 数据分析</span>
+            <span style="padding:5px 14px;border:1px solid var(--border-m);border-radius:100px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;">0→1 产品搭建</span>
+            <span style="padding:5px 14px;border:1px solid var(--border-m);border-radius:100px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;">A/B 测试</span>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--ink-4);margin-bottom:20px;font-style:italic;font-family:'Lora',serif;">AI 从你的经历出发，而非你设定的意向，发现以下岗位——</p>
+        <div class="discover-cards">
+          <div class="d-card cross">
+            <span class="d-badge">跨行探索</span>
+            <div class="d-title">客户成功负责人</div>
+            <div class="d-co">某 SaaS 公司 · 上海 · C 轮</div>
+            <div class="d-why">「你在电商平台负责过用户留存，DAU 提升 35%；你的数据分析 + 用户运营经历与 SaaS 客户成功高度重合。」</div>
+            <div class="d-bottom"><div class="d-salary">30–45k</div><span class="d-cta">一键生成简历 →</span></div>
+          </div>
+          <div class="d-card salary-up">
+            <span class="d-badge">薪资天花板</span>
+            <div class="d-title">增长产品专家 Senior</div>
+            <div class="d-co">出海独角兽 · 北京 · 可远程</div>
+            <div class="d-why">「出海方向同类岗位薪资溢价明显。你的 0→1 经历 + 数据能力符合此方向核心要求，竞争相对更小。」</div>
+            <div class="d-bottom"><div class="d-salary">35–50k</div><span class="d-cta">一键生成简历 →</span></div>
+          </div>
+          <div class="d-card niche">
+            <span class="d-badge">冷门蓝海</span>
+            <div class="d-title">AI 产品训练师</div>
+            <div class="d-co">某大模型公司 · 北京 · 战略融资</div>
+            <div class="d-why">「新兴岗位，竞争极少。你的用户研究 + 产品设计经验正是 AI 训练师最稀缺的能力组合。」</div>
+            <div class="d-bottom"><div class="d-salary">40–60k</div><span class="d-cta">一键生成简历 →</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: result list -->
+    <div id="result-area">
+      <p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-4);margin-bottom:16px;font-weight:400;">全网匹配到 <strong style="color:var(--ink)">247</strong> 个岗位</p>
+      <div class="result-cards">
+        <div class="r-card">
+          <div class="r-card-top">
+            <div><div class="r-title">高级产品经理 · C 端增长</div><div class="r-company">字节跳动 · 北京 · 今日新发布</div></div>
+            <div style="text-align:right"><div class="r-salary">25–35k</div><div class="r-score">匹配 91%</div></div>
+          </div>
+          <div class="r-match-tags">
+            <span class="r-tag ok">✓ 北京</span><span class="r-tag ok">✓ 薪资</span><span class="r-tag ok">✓ 互联网</span>
+          </div>
+        </div>
+        <div class="r-card">
+          <div class="r-card-top">
+            <div><div class="r-title">增长产品经理</div><div class="r-company">美团 · 北京 · 3 小时前</div></div>
+            <div style="text-align:right"><div class="r-salary">20–30k</div><div class="r-score">匹配 83%</div></div>
+          </div>
+          <div class="r-match-tags">
+            <span class="r-tag ok">✓ 北京</span><span class="r-tag ok">✓ 薪资</span><span class="r-tag warn">? 要求 5 年</span>
+          </div>
+        </div>
+        <div class="r-card">
+          <div class="r-card-top">
+            <div><div class="r-title">产品运营总监</div><div class="r-company">某消费品牌 · 北京 · B 轮</div></div>
+            <div style="text-align:right"><div class="r-salary">30–45k</div><div class="r-score">匹配 76%</div></div>
+          </div>
+          <div class="r-match-tags">
+            <span class="r-tag ok">✓ 北京</span><span class="r-tag ok">✓ 薪资超预期</span><span class="r-tag warn">? 跨行业</span>
+          </div>
+        </div>
+        <div class="r-card" style="text-align:center;padding:20px;color:var(--ink-4);font-size:13px;cursor:default;border-left:3px solid transparent;">
+          还有 244 个岗位等待你查看 →
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DAILY PUSH -->
+<section class="section" id="daily" style="background:var(--cream-2);">
+  <div class="daily-layout">
+    <div>
+      <span class="sec-tag">Daily Radar · 每日推送</span>
+      <h2 class="sec-h">每天早 9 点<br>岗位送到<em>微信</em></h2>
+      <p class="sec-lead">不用每天手动刷平台。CareerTwin 全天候监控新发布的 JD，筛选后一条推送解决。</p>
+
+      <div class="push-features">
+        <div class="pf-item">
+          <span class="pf-num">01</span>
+          <div>
+            <h4>意向精准匹配</h4>
+            <p>薪资、城市、行业全部符合的岗位，优先推送，并附上详细的匹配项对比。</p>
+          </div>
+        </div>
+        <div class="pf-item">
+          <span class="pf-num">02</span>
+          <div>
+            <h4>分身惊喜发现</h4>
+            <p>你可能没想到能做的岗位，附上 AI 的理由——跨行、高薪、冷门蓝海，三个维度。</p>
+          </div>
+        </div>
+        <div class="pf-item">
+          <span class="pf-num">03</span>
+          <div>
+            <h4>高匹配即时提醒</h4>
+            <p>当分身匹配度超过 90%，不等每日汇总，立即单独通知你。</p>
+          </div>
+        </div>
+        <div class="pf-item">
+          <span class="pf-num">04</span>
+          <div>
+            <h4>智能过滤</h4>
+            <p>已投递的公司、标记「不感兴趣」的方向、节假日——自动静默，不打扰。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone mockup -->
+    <div class="phone-outer">
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-bar">
+            <span class="phone-time">09:00</span>
+            <span class="phone-icons">▲▲▲ 🔋</span>
+          </div>
+          <div class="wc-bar">
+            <span class="wc-back-btn">‹</span>
+            <span class="wc-chat-nm">CareerTwin</span>
+            <span class="wc-dots">···</span>
+          </div>
+          <div class="wc-body">
+            <div class="wc-ts">今天 09:00</div>
+            <div class="wc-row">
+              <div class="wc-av">✦</div>
+              <div class="bubble">
+                <div class="b-head">
+                  <h5>今日岗位雷达 · 8 个新机会</h5>
+                  <p>Hi 张三，为你发现以下岗位</p>
+                </div>
+                <div class="b-content">
+                  <div class="b-section-head intent-head">✓ 意向精准匹配 ×3</div>
+                  <div class="b-job-row">
+                    <div class="b-job-name">字节跳动 · 高级产品经理</div>
+                    <div class="b-job-info">北京 · 25–35k · 今日新发布</div>
+                    <div class="b-job-match">✓城市 ✓薪资 ✓行业</div>
+                  </div>
+                  <div class="b-job-row">
+                    <div class="b-job-name">美团 · 增长产品经理</div>
+                    <div class="b-job-info">北京 · 20–30k</div>
+                    <div class="b-job-match">✓城市 ✓薪资 · ?要求5年</div>
+                  </div>
+                  <div class="b-section-head twin-head" style="margin-top:8px;">✦ 分身发现 ×5</div>
+                  <div class="b-job-row">
+                    <div class="b-job-name">某SaaS · 客户成功负责人</div>
+                    <div class="b-job-info">上海 · 30–45k · 跨行探索</div>
+                    <div class="b-job-why">你的用户运营经历与SaaS客户成功高度匹配</div>
+                  </div>
+                  <div class="b-divider"></div>
+                  <div class="b-btns">
+                    <div class="b-btn">查看全部</div>
+                    <div class="b-btn">生成简历</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <span class="sec-tag">Features</span>
+  <h2 class="sec-h">求职全流程<br>一个分身搞定</h2>
+  <p class="sec-lead">从发现机会到投递材料，CareerTwin 把每一个耗时的环节都自动化了。</p>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <span class="feat-card-tag">核心 · P0</span>
+      <h3>AI 智能追问构建分身</h3>
+      <p>不只是解析简历。AI 会追问「这个项目你的核心贡献是什么？结果能量化吗？」，帮你挖掘简历里从未写出的真实价值。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag" style="color:#6B9E6B;">雷达 · 新功能</span>
+      <h3>意向搜索引擎</h3>
+      <p>设定薪资、城市、行业、职类，全网一键搜索，每条结果显示完整匹配项对比，不需要手动逐一筛选。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag" style="color:var(--copper);">雷达 · 新功能</span>
+      <h3>分身反向匹配</h3>
+      <p>AI 从你的经历出发，发现跨行岗位、更高薪资段、冷门蓝海——三个维度，找到你自己都不知道能做的机会。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag" style="color:#9E856B;">雷达 · 新功能</span>
+      <h3>每日微信推送</h3>
+      <p>早 9 点企业微信推送，当日新岗位一条消息搞定。高匹配岗位实时提醒，不错过任何窗口期。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag">核心 · P0</span>
+      <h3>定制简历生成</h3>
+      <p>根据 JD 自动调整简历的侧重点、关键词密度和经历排序。多套专业模板，PDF 下载即可投递。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag">核心 · P0</span>
+      <h3>网申逐题填写</h3>
+      <p>工作经历、为什么选择我们、你的核心优势……每道题都有基于你真实经历的最优答案建议，一键复制。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag">增值 · P1</span>
+      <h3>个人作品集</h3>
+      <p>一键生成可分享的个人主页链接，或精美 PDF 作品集。让 HR 在简历之外看到你完整的职业形象。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag">增值 · P1</span>
+      <h3>投递记录追踪</h3>
+      <p>记录每个岗位的投递状态、面试进度、Offer 详情。所有求职进展，一个地方管理。</p>
+    </div>
+    <div class="feat-card">
+      <span class="feat-card-tag">规划中 · P2</span>
+      <h3>面试准备助手</h3>
+      <p>基于你的分身数据 + 目标 JD，生成高概率被问到的面试题，并给出基于真实经历的回答框架。</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <span class="sec-tag">Pricing</span>
+  <h2 class="sec-h">简单定价</h2>
+  <p class="sec-lead">验证期间，前 100 位用户完全免费——我们需要你的真实反馈。</p>
+
+  <div class="pricing-layout">
+    <div class="p-card">
+      <span class="p-plan-name">Free</span>
+      <div class="p-price">¥0</div>
+      <div class="p-period">永久免费，基础功能</div>
+      <ul class="p-features">
+        <li>构建 1 个职场分身</li>
+        <li>每月生成 3 份定制简历</li>
+        <li>意向搜索（每日 10 条）</li>
+        <li>每周 1 次雷达推送</li>
+        <li>网申内容建议（基础版）</li>
+      </ul>
+      <a href="#waitlist" class="p-btn p-btn-outline">免费开始</a>
+    </div>
+    <div class="p-card dark">
+      <span class="p-plan-name">Pro</span>
+      <div class="p-price">¥49</div>
+      <div class="p-period">/ 月，随时取消</div>
+      <ul class="p-features">
+        <li>无限职场分身</li>
+        <li>无限简历生成</li>
+        <li>每日雷达推送（无上限）</li>
+        <li>分身反向匹配（全三维度）</li>
+        <li>高匹配即时提醒</li>
+        <li>个人作品集网站</li>
+        <li>面试准备助手</li>
+        <li>优先客服支持</li>
+      </ul>
+      <a href="#waitlist" class="p-btn p-btn-solid">升级 Pro</a>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="waitlist-wrap" id="waitlist">
+  <div class="waitlist-bg-word" aria-hidden="true">Offer</div>
+  <span class="sec-tag" style="color:var(--copper-l);">Early Access</span>
+  <h2>成为第一批拥有<br><em>职场分身</em>的人</h2>
+  <p>留下邮箱，优先获得内测资格 + 终身 Pro 折扣 + 每日岗位雷达</p>
+  <div class="wl-form">
+    <input type="email" id="wl-email" placeholder="your@email.com">
+    <button onclick="joinWL()">加入候补</button>
+  </div>
+  <div class="wl-social">
+    <div class="wl-avatars">
+      <div class="wl-av">李</div><div class="wl-av">王</div><div class="wl-av">张</div><div class="wl-av">陈</div>
+    </div>
+    <span id="wl-count">已有 <strong style="color:rgba(250,248,243,0.7)">312</strong> 人加入候补</span>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">Career<em>Twin</em></div>
+  <div>从简历到分身，从分身到 Offer</div>
+  <div>© 2025 CareerTwin</div>
+</footer>
+
+<script>
+function switchTab(i) {
+  document.querySelectorAll('.rtab').forEach((t,j) => t.classList.toggle('active', i===j));
+  document.querySelectorAll('.rpane').forEach((p,j) => p.classList.toggle('active', i===j));
+}
+
+function doSearch(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '搜索中……';
+  btn.style.opacity = '0.6';
+  setTimeout(() => {
+    btn.textContent = '✓ 找到 247 个匹配岗位';
+    btn.style.opacity = '1';
+    btn.style.background = 'var(--copper)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+    }, 2400);
+  }, 1100);
+}
+
+let n = 312;
+function joinWL() {
+  const el = document.getElementById('wl-email');
+  if (!el.value || !el.value.includes('@')) { alert('请输入有效邮箱'); return; }
+  n++;
+  document.getElementById('wl-count').innerHTML = `已有 <strong style="color:rgba(250,248,243,0.7)">${n}</strong> 人加入候补 — 欢迎你 🎉`;
+  el.value = '';
+  const btn = document.querySelector('.wl-form button');
+  btn.textContent = '✓ 已加入';
+  btn.style.background = '#5A8A5A';
+}
+
+// Scroll reveal
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.07 });
+
+document.querySelectorAll('.how-step, .feat-card, .p-card, .r-card, .d-card, .intro-item').forEach(el => {
+  el.style.transition = 'opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1)';
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(18px)';
+  io.observe(el);
+});
+</script>
+</body>
+</html>
