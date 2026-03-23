@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerTwin · 真实简历分析 + 个人网站生成</title>
+<!-- PDF.js: 浏览器端 PDF 文本提取 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- mammoth.js: 浏览器端 Word 文本提取 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:#FAF8F3; --cream-2:#F3EFE6; --cream-3:#EAE3D6;
+  --ink:#1C1814; --ink-2:#3D3529; --ink-3:#6B5F50; --ink-4:#9C9080;
+  --copper:#A0622A; --copper-l:#C8844A;
+  --green:#4A7A5A; --red:#8B3030;
+  --border:rgba(60,45,30,0.12); --border-m:rgba(60,45,30,0.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--cream);color:var(--ink);font-family:'Noto Sans SC',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;}
+::selection{background:var(--copper-l);color:white;}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:300px 1fr;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{background:var(--ink);padding:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:28px 28px 20px;border-bottom:1px solid rgba(255,255,255,0.07);}
+.sidebar-logo a{font-family:'DM Serif Display',serif;font-size:20px;color:var(--cream);text-decoration:none;}
+.sidebar-logo a em{font-style:italic;color:var(--copper-l);}
+.sidebar-logo p{font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px;letter-spacing:0.3px;}
+
+.sidebar-steps{padding:20px 0;flex:1;}
+.step-item{display:flex;align-items:flex-start;gap:14px;padding:14px 28px;cursor:pointer;transition:background 0.15s;border-left:3px solid transparent;}
+.step-item:hover{background:rgba(255,255,255,0.04);}
+.step-item.active{background:rgba(255,255,255,0.07);border-left-color:var(--copper-l);}
+.step-item.done{border-left-color:var(--green);}
+.step-circle{width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,0.4);flex-shrink:0;font-family:'Lora',serif;transition:all 0.2s;}
+.step-item.active .step-circle{border-color:var(--copper-l);color:var(--copper-l);}
+.step-item.done .step-circle{background:var(--green);border-color:var(--green);color:white;}
+.step-label{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.4;}
+.step-label strong{display:block;font-size:13px;font-weight:500;color:rgba(255,255,255,0.7);margin-bottom:2px;}
+.step-item.active .step-label strong{color:white;}
+.step-item.done .step-label strong{color:rgba(255,255,255,0.6);}
+
+.sidebar-api{padding:20px 28px;border-top:1px solid rgba(255,255,255,0.07);}
+.api-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:8px;display:block;}
+.api-input{width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:9px 12px;color:white;font-size:12px;font-family:'Noto Sans SC',sans-serif;outline:none;transition:border-color 0.2s;}
+.api-input:focus{border-color:var(--copper-l);}
+.api-input::placeholder{color:rgba(255,255,255,0.2);}
+.api-status{font-size:11px;margin-top:6px;}
+.api-status.ok{color:var(--green);}
+.api-status.err{color:#E07070;}
+
+/* MAIN */
+.main{padding:52px 64px;overflow-y:auto;max-width:900px;}
+.pane{display:none;}
+.pane.active{display:block;}
+
+/* Typography */
+.pane-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--copper);margin-bottom:20px;display:block;font-weight:400;}
+.pane-h{font-family:'DM Serif Display',serif;font-size:clamp(32px,4vw,48px);line-height:1.08;letter-spacing:-1px;color:var(--ink);margin-bottom:12px;}
+.pane-h em{font-style:italic;color:var(--copper);}
+.pane-lead{font-size:15px;color:var(--ink-3);line-height:1.8;margin-bottom:36px;font-weight:300;max-width:560px;}
+
+/* ── STEP 1: UPLOAD ── */
+.upload-zone{border:1.5px dashed var(--border-m);padding:52px;text-align:center;cursor:pointer;transition:all 0.25s;border-radius:3px;position:relative;}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--copper);background:rgba(160,98,42,0.03);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.upload-icon{font-size:40px;margin-bottom:14px;display:block;}
+.upload-zone h3{font-family:'Lora',serif;font-size:18px;color:var(--ink);margin-bottom:8px;}
+.upload-zone p{font-size:13px;color:var(--ink-4);line-height:1.6;}
+.upload-zone .hint{font-size:11px;color:var(--ink-4);margin-top:10px;letter-spacing:0.5px;}
+.upload-zone.uploading{border-color:var(--copper);background:rgba(160,98,42,0.04);}
+.upload-zone.done{border-color:var(--green);background:rgba(74,122,90,0.04);}
+
+.progress-wrap{margin-top:24px;display:none;}
+.progress-wrap.visible{display:block;}
+.prog-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:10px;}
+.prog-fill{height:100%;background:var(--copper);border-radius:2px;transition:width 0.4s ease;width:0%;}
+.prog-text{font-size:12px;color:var(--ink-3);font-style:italic;font-family:'Lora',serif;}
+
+/* ── STEP 2: TWIN ── */
+.twin-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;}
+.photo-strip{display:flex;align-items:center;gap:20px;background:var(--cream-2);border:1px solid var(--border);padding:18px 22px;margin-bottom:20px;}
+.photo-avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--border-m);flex-shrink:0;}
+.photo-avatar-placeholder{width:72px;height:72px;border-radius:50%;background:var(--cream-3);border:2px dashed var(--border-m);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.photo-info{flex:1;}
+.photo-info h4{font-family:'Lora',serif;font-size:14px;color:var(--ink);margin-bottom:4px;}
+.photo-info p{font-size:12px;color:var(--ink-4);line-height:1.5;}
+.photo-thumbs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.photo-thumb{width:44px;height:44px;border-radius:4px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:all 0.15s;}
+.photo-thumb:hover{border-color:var(--copper-l);}
+.photo-thumb.selected{border-color:var(--copper);box-shadow:0 0 0 2px rgba(160,98,42,0.2);}
+.twin-card{background:var(--cream-2);border:1px solid var(--border);padding:20px 22px;}
+.tc-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--copper);margin-bottom:12px;display:block;font-weight:400;}
+.tc-content{font-size:13px;color:var(--ink-2);line-height:1.75;}
+.tc-content ul{padding-left:16px;}
+.tc-content ul li{margin-bottom:4px;}
+.twin-tags-wrap{margin-bottom:28px;}
+.twin-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.twin-tag{padding:5px 14px;border:1px solid var(--border-m);border-radius:100px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;}
+.twin-tag.key{background:var(--ink);color:var(--cream);border-color:var(--ink);}
+
+.ai-question-box{background:var(--cream-2);border:1px solid var(--border);border-left:3px solid var(--copper);padding:20px 24px;margin-bottom:20px;}
+.aq-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--copper);margin-bottom:10px;display:block;}
+.aq-q{font-size:14px;color:var(--ink-2);line-height:1.7;font-family:'Lora',serif;font-style:italic;margin-bottom:14px;}
+.aq-input{width:100%;padding:12px 16px;border:1px solid var(--border-m);background:var(--cream);border-radius:3px;font-size:14px;font-family:'Noto Sans SC',sans-serif;outline:none;resize:none;color:var(--ink);}
+.aq-input:focus{border-color:var(--copper);}
+.aq-answer{background:var(--ink);color:var(--cream);padding:12px 16px;border-radius:3px;font-size:13px;line-height:1.65;display:none;}
+
+.section-divider{height:1px;background:var(--border);margin:28px 0;}
+
+/* ── STEP 3: JOBS ── */
+.job-card{background:var(--cream);border:1px solid var(--border);border-left:3px solid transparent;padding:20px 24px;margin-bottom:1px;cursor:pointer;transition:all 0.2s;}
+.job-card:hover{border-left-color:var(--copper);background:var(--cream-2);}
+.job-card.selected{border-left-color:var(--green);background:rgba(74,122,90,0.04);}
+.jc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.jc-title{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--ink);}
+.jc-salary{font-family:'Lora',serif;font-size:14px;color:var(--copper);}
+.jc-co{font-size:12px;color:var(--ink-4);margin-bottom:10px;}
+.jc-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.jc-tag{font-size:11px;padding:2px 10px;border-radius:100px;}
+.jc-tag.ok{background:rgba(74,122,90,0.1);color:var(--green);}
+.jc-tag.warn{background:rgba(160,98,42,0.1);color:var(--copper);}
+.jc-score{font-size:11px;color:var(--ink-4);}
+.jc-jd{background:var(--cream-2);border-top:1px solid var(--border);padding:16px 20px;font-size:13px;color:var(--ink-3);line-height:1.8;display:none;margin-top:12px;}
+.jc-jd.vis{display:block;}
+.jc-jd h5{font-family:'Lora',serif;font-size:13px;color:var(--ink);margin-bottom:8px;font-weight:600;}
+.jc-jd ul{padding-left:16px;}
+.jc-jd ul li{margin-bottom:4px;}
+
+/* ── STEP 4: RESUME ── */
+.resume-paper{background:white;border:1px solid var(--border);padding:40px 44px;box-shadow:0 2px 12px rgba(28,24,20,0.06);margin-bottom:24px;}
+.rp-name{font-family:'Lora',serif;font-size:26px;font-weight:600;color:var(--ink);margin-bottom:3px;}
+.rp-title{font-size:14px;color:var(--copper);margin-bottom:6px;font-family:'Lora',serif;}
+.rp-contact{font-size:12px;color:var(--ink-4);padding-bottom:16px;border-bottom:1.5px solid var(--ink);margin-bottom:18px;}
+.rp-section{margin-bottom:18px;}
+.rp-section-h{font-family:'Lora',serif;font-size:13px;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.rp-highlight{background:rgba(160,98,42,0.06);border-left:2px solid var(--copper);padding:5px 12px;margin-bottom:5px;font-size:12px;color:var(--ink-2);font-family:'Lora',serif;font-style:italic;line-height:1.6;}
+.rp-job{margin-bottom:14px;}
+.rp-job-title{font-size:13px;font-weight:600;color:var(--ink-2);}
+.rp-job-meta{font-size:11px;color:var(--ink-4);margin-bottom:6px;}
+.rp-job ul{padding-left:16px;font-size:12px;color:var(--ink-3);line-height:1.8;}
+.rp-skills{display:flex;flex-wrap:wrap;gap:6px;}
+.rp-skill{padding:3px 11px;border:1px solid var(--border);border-radius:100px;font-size:11px;color:var(--ink-3);}
+
+/* ── STEP 5: WEBSITE ── */
+.style-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px;}
+.style-card{border:2px solid var(--border);border-radius:3px;overflow:hidden;cursor:pointer;transition:all 0.2s;}
+.style-card:hover{border-color:var(--copper-l);}
+.style-card.selected{border-color:var(--copper);box-shadow:0 0 0 3px rgba(160,98,42,0.12);}
+.style-preview{height:120px;display:flex;align-items:center;justify-content:center;font-size:28px;position:relative;overflow:hidden;}
+.style-label{padding:10px 14px;background:var(--cream-2);border-top:1px solid var(--border);}
+.style-label h4{font-family:'Lora',serif;font-size:13px;color:var(--ink);margin-bottom:2px;}
+.style-label p{font-size:11px;color:var(--ink-4);}
+.style-card.recommended::before{content:'推荐';position:absolute;top:8px;right:8px;background:var(--copper);color:white;font-size:9px;padding:2px 7px;border-radius:2px;letter-spacing:0.5px;font-weight:500;}
+
+/* Website preview iframe */
+.website-preview{border:1px solid var(--border);border-radius:3px;overflow:hidden;background:white;}
+.preview-toolbar{background:var(--cream-3);padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.preview-dots{display:flex;gap:5px;}
+.preview-dot{width:10px;height:10px;border-radius:50%;}
+.preview-url{flex:1;background:white;border:1px solid var(--border);border-radius:3px;padding:4px 12px;font-size:11px;color:var(--ink-4);font-family:'Noto Sans SC',sans-serif;}
+.preview-frame{width:100%;height:520px;border:none;display:block;}
+
+/* ── SHARED UI ── */
+.btn{padding:12px 28px;border-radius:100px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Noto Sans SC',sans-serif;transition:all 0.2s;border:none;display:inline-block;text-decoration:none;}
+.btn-ink{background:var(--ink);color:var(--cream);}
+.btn-ink:hover{background:var(--ink-2);}
+.btn-outline{background:none;border:1px solid var(--border-m);color:var(--ink-3);}
+.btn-outline:hover{color:var(--ink);}
+.btn-copper{background:var(--copper);color:white;}
+.btn-copper:hover{background:var(--copper-l);}
+.btn-row{display:flex;gap:12px;align-items:center;margin-top:28px;flex-wrap:wrap;}
+
+.loading-line{height:2px;background:linear-gradient(90deg,transparent,var(--copper),transparent);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:2px;margin:16px 0;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+.error-box{background:rgba(139,48,48,0.06);border:1px solid rgba(139,48,48,0.2);border-left:3px solid var(--red);padding:14px 18px;font-size:13px;color:var(--red);border-radius:2px;margin-bottom:16px;display:none;}
+.error-box.vis{display:block;}
+
+@media(max-width:800px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{height:auto;position:static;}
+  .sidebar-steps{display:flex;overflow-x:auto;padding:0;}
+  .step-item{flex-direction:column;gap:4px;padding:12px 16px;min-width:90px;}
+  .main{padding:28px 20px;}
+  .twin-grid,.style-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="#">Career<em>Twin</em></a>
+    <p>职场分身 · 全流程试用</p>
+  </div>
+  <nav class="sidebar-steps">
+    <div class="step-item active" onclick="goStep(1)" id="si1">
+      <div class="step-circle">1</div>
+      <div class="step-label"><strong>上传简历</strong>支持 PDF / Word</div>
+    </div>
+    <div class="step-item" onclick="goStep(2)" id="si2">
+      <div class="step-circle">2</div>
+      <div class="step-label"><strong>构建分身</strong>AI 解析 + 追问</div>
+    </div>
+    <div class="step-item" onclick="goStep(3)" id="si3">
+      <div class="step-circle">3</div>
+      <div class="step-label"><strong>匹配职位</strong>全网搜索结果</div>
+    </div>
+    <div class="step-item" onclick="goStep(4)" id="si4">
+      <div class="step-circle">4</div>
+      <div class="step-label"><strong>生成简历</strong>针对职位定制</div>
+    </div>
+    <div class="step-item" onclick="goStep(5)" id="si5">
+      <div class="step-circle">5</div>
+      <div class="step-label"><strong>个人网站</strong>一键生成主页</div>
+    </div>
+  </nav>
+  <div class="sidebar-api">
+    <span class="api-label">Worker 代理地址</span>
+    <input class="api-input" type="text" id="worker-url" placeholder="https://你的名字.xxx.workers.dev" oninput="checkApiKey()" style="margin-bottom:10px;">
+    <span class="api-label" style="margin-top:4px;">MiniMax API Key</span>
+    <input class="api-input" type="password" id="api-key" placeholder="sk-cp-R... (Coding Plan Key)" oninput="checkApiKey()" onpaste="setTimeout(()=>{this.value=Array.from(this.value).filter(c=>c.charCodeAt(0)>=0x20&&c.charCodeAt(0)<=0x7E).join('');checkApiKey();},0)">
+    <div class="api-status" id="api-status"></div>
+    <p style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:8px;line-height:1.5;">Coding Plan Key（sk-cp-R 开头）配 minimaxi.com 域名 · Key 仅本地使用</p>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ══ STEP 1: UPLOAD ══ -->
+  <div class="pane active" id="pane1">
+    <span class="pane-tag">Step 01</span>
+    <h1 class="pane-h">上传你的简历</h1>
+    <p class="pane-lead">支持 PDF 或 Word 格式，可以同时上传多份历年简历。文件只在你的浏览器里处理，不会存储到任何服务器。</p>
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".pdf,.doc,.docx" multiple onchange="handleFiles(this.files)">
+      <span class="upload-icon" id="upload-icon">📄</span>
+      <h3 id="upload-title">点击上传简历文件</h3>
+      <p id="upload-desc">支持 PDF、Word（.doc / .docx），可同时上传多份</p>
+      <div class="hint" id="upload-hint">文件在本地处理，不会上传到服务器</div>
+    </div>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-text" id="prog-text">准备中…</div>
+    </div>
+
+    <div class="error-box" id="upload-error"></div>
+
+    <div class="btn-row" id="upload-actions" style="display:none;">
+      <button class="btn btn-ink" onclick="analyzeResume()">开始 AI 解析 →</button>
+      <button class="btn btn-outline" onclick="document.getElementById('file-input').click()">重新上传</button>
+      <span style="font-size:12px;color:var(--ink-4);font-style:italic;font-family:'Lora',serif;">将调用 MiniMax API 解析简历内容</span>
+    </div>
+  </div>
+
+  <!-- ══ STEP 2: TWIN ══ -->
+  <div class="pane" id="pane2">
+    <span class="pane-tag">Step 02</span>
+    <h1 class="pane-h">你的<em>职场分身</em></h1>
+    <p class="pane-lead">AI 已从你的简历中提取以下信息，并整理成结构化的职场知识库。</p>
+
+    <div class="loading-line" id="twin-loading" style="display:none;"></div>
+    <div id="twin-content" style="display:none;">
+      <div class="twin-grid" id="twin-grid"></div>
+
+      <div class="twin-tags-wrap">
+        <span class="pane-tag" style="margin-bottom:8px;">核心能力标签</span>
+        <div class="twin-tags" id="twin-tags"></div>
+      </div>
+
+      <div class="section-divider"></div>
+
+      <div class="ai-question-box" id="ai-q-box">
+        <span class="aq-label">AI 追问 · 补充量化数据</span>
+        <div class="aq-q" id="aq-question"></div>
+        <div id="aq-answer-area">
+          <textarea class="aq-input" id="aq-input" rows="3" placeholder="用你自己的话回答就好…"></textarea>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-ink" onclick="submitAnswer()">提交补充 →</button>
+            <button class="btn btn-outline" onclick="skipAnswer()">跳过这个问题</button>
+          </div>
+        </div>
+        <div class="aq-answer" id="aq-answer"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" id="twin-next" style="display:none;">
+      <button class="btn btn-ink" onclick="goStep(3)">下一步：匹配职位 →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: JOBS ══ -->
+  <div class="pane" id="pane3">
+    <span class="pane-tag">Step 03</span>
+    <h1 class="pane-h">选择目标<em>职位</em></h1>
+    <p class="pane-lead">从下方示例职位中选择，或直接粘贴你看中的真实职位描述——粘贴的 JD 越完整，生成的简历越有针对性。</p>
+
+    <div class="loading-line" id="jobs-loading" style="display:none;"></div>
+
+    <!-- JD 粘贴区 -->
+    <div style="margin-bottom:24px;">
+      <!-- URL 抓取 -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input id="jd-url-input" type="text"
+          style="flex:1;padding:10px 14px;border:1px solid var(--border-m);background:var(--cream);border-radius:3px;font-size:13px;font-family:'Noto Sans SC',sans-serif;outline:none;color:var(--ink);transition:border-color 0.2s;"
+          placeholder="粘贴职位页链接，自动抓取 JD（支持脉脉、官网等公开页面）"
+          onfocus="this.style.borderColor='var(--copper)'"
+          onblur="this.style.borderColor='var(--border-m)'"
+          onkeydown="if(event.key==='Enter')fetchJDFromUrl()">
+        <button onclick="fetchJDFromUrl()" id="fetch-url-btn"
+          style="padding:10px 18px;background:var(--ink);color:var(--cream);border:none;border-radius:3px;font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;white-space:nowrap;transition:background 0.2s;"
+          onmouseover="this.style.background='var(--ink-2)'" onmouseout="this.style.background='var(--ink)'">
+          抓取 JD
+        </button>
+      </div>
+      <div id="fetch-status" style="font-size:12px;color:var(--ink-4);margin-bottom:8px;min-height:18px;font-style:italic;font-family:'Lora',serif;"></div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--copper);font-weight:400;">或手动粘贴职位描述</span>
+        <span style="font-size:11px;color:var(--ink-4);">Boss直聘/智联登录页需手动复制</span>
+      </div>
+      <textarea id="jd-paste" rows="7"
+        style="width:100%;padding:14px 16px;border:1px solid var(--border-m);background:var(--cream);border-radius:3px;font-size:13px;font-family:'Noto Sans SC',sans-serif;outline:none;resize:vertical;color:var(--ink);line-height:1.7;transition:border-color 0.2s;"
+        placeholder="把职位描述全文粘贴到这里，包括职责、任职要求、加分项……内容越完整，简历匹配度越高。&#10;&#10;也可以直接选择下方的示例职位跳过此步骤。"
+        oninput="onJDInput(this)"
+        onfocus="this.style.borderColor='var(--copper)'"
+        onblur="this.style.borderColor='var(--border-m)'"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <span id="jd-char-count" style="font-size:11px;color:var(--ink-4);">0 字</span>
+        <button class="btn btn-ink" id="jd-confirm-btn" onclick="confirmJD()" style="display:none;padding:9px 22px;font-size:13px;">
+          使用此 JD 生成简历 →
+        </button>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:11px;color:var(--ink-4);white-space:nowrap;">或从以下示例职位中选择</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+
+    <div id="jobs-content"></div>
+
+    <div class="btn-row" id="jobs-next" style="display:none;">
+      <button class="btn btn-ink" onclick="goStep(4)">生成定制简历 →</button>
+      <span class="btn btn-outline" style="cursor:default;" id="selected-job-label"></span>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: RESUME ══ -->
+  <div class="pane" id="pane4">
+    <span class="pane-tag">Step 04</span>
+    <h1 class="pane-h">你的<em>定制简历</em></h1>
+    <p class="pane-lead">针对所选职位，AI 已重新组织简历的侧重点、关键词和经历描述。不同岗位生成的内容会有实质差异。</p>
+    <div id="resume-jd-hint" style="display:none;background:var(--cream-2);border:1px solid var(--border);border-left:3px solid var(--copper);padding:12px 16px;margin-bottom:20px;font-size:12px;color:var(--ink-3);line-height:1.6;">
+      <strong style="color:var(--copper);display:block;margin-bottom:4px;">针对职位：</strong>
+      <span id="resume-jd-preview"></span>
+    </div>
+
+    <div class="loading-line" id="resume-loading" style="display:none;"></div>
+    <div id="resume-content"></div>
+
+    <div class="btn-row" id="resume-next" style="display:none;">
+      <button class="btn btn-ink" onclick="goStep(5)">生成个人网站 →</button>
+      <button class="btn btn-outline" onclick="goStep(3);state.fullJD='';document.getElementById('jd-paste').value='';document.getElementById('jd-char-count').textContent='0 字';document.getElementById('jd-confirm-btn').style.display='none';">← 换一个职位</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 5: WEBSITE ══ -->
+  <div class="pane" id="pane5">
+    <span class="pane-tag">Step 05</span>
+    <h1 class="pane-h">你的<em>个人网站</em></h1>
+    <p class="pane-lead">根据你的职业背景，我们推荐了最适合的风格。你也可以选择任意一种，30 秒生成可分享的个人主页。</p>
+
+    <div class="style-grid" id="style-grid">
+      <div class="style-card" data-style="editorial" onclick="selectStyle(this)">
+        <div class="style-preview" style="background:#FAF8F3;font-family:'Georgia',serif;flex-direction:column;gap:4px;">
+          <span style="font-size:13px;color:#A0622A;letter-spacing:2px;text-transform:uppercase;font-size:9px;">PORTFOLIO</span>
+          <span style="font-size:18px;color:#1C1814;font-style:italic;">编辑 · 人文</span>
+        </div>
+        <div class="style-label" style="position:relative;">
+          <h4>极简人文风</h4>
+          <p>衬线字体，奶油纸感，适合品牌 / 市场 / 公关方向</p>
+        </div>
+      </div>
+      <div class="style-card recommended" data-style="modern" onclick="selectStyle(this)" style="position:relative;">
+        <div class="style-preview" style="background:#0F1117;flex-direction:column;gap:6px;">
+          <span style="font-size:10px;color:#6B9E6B;letter-spacing:2px;">CREATIVE</span>
+          <span style="font-size:16px;color:white;font-weight:700;">现代 · 深色</span>
+        </div>
+        <div class="style-label">
+          <h4>现代深色风</h4>
+          <p>深色背景，霓虹点缀，适合科技 / 产品 / 设计方向</p>
+        </div>
+      </div>
+      <div class="style-card" data-style="magazine" onclick="selectStyle(this)">
+        <div class="style-preview" style="background:#FFF5F0;flex-direction:column;gap:4px;">
+          <span style="font-size:22px;">✦</span>
+          <span style="font-size:14px;color:#C0522A;font-weight:700;">杂志排版风</span>
+        </div>
+        <div class="style-label">
+          <h4>杂志排版风</h4>
+          <p>大图 + 跳跃排版，适合内容 / 媒体 / 创意方向</p>
+        </div>
+      </div>
+      <div class="style-card" data-style="minimal" onclick="selectStyle(this)">
+        <div class="style-preview" style="background:white;border-bottom:1px solid #E5E5E5;">
+          <span style="font-size:13px;color:#333;letter-spacing:4px;text-transform:uppercase;">MINIMAL</span>
+        </div>
+        <div class="style-label">
+          <h4>极度极简风</h4>
+          <p>纯白，无装饰，文字即设计，适合咨询 / 金融方向</p>
+        </div>
+      </div>
+      <div class="style-card" data-style="warm" onclick="selectStyle(this)">
+        <div class="style-preview" style="background:linear-gradient(135deg,#2D1B69,#11998E);flex-direction:column;gap:4px;">
+          <span style="font-size:14px;color:white;opacity:0.9;">渐变 · 活力</span>
+        </div>
+        <div class="style-label">
+          <h4>渐变活力风</h4>
+          <p>彩色渐变，充满能量，适合运营 / 增长 / 市场方向</p>
+        </div>
+      </div>
+      <div class="style-card" data-style="retro" onclick="selectStyle(this)">
+        <div class="style-preview" style="background:#1A0A00;flex-direction:column;gap:4px;">
+          <span style="font-size:12px;color:#F5C060;letter-spacing:3px;font-family:monospace;">► RETRO</span>
+          <span style="font-size:13px;color:#F5C060;font-family:monospace;">复古·终端风</span>
+        </div>
+        <div class="style-label">
+          <h4>复古终端风</h4>
+          <p>像素 + 等宽字体，适合技术 / 开发 / 极客方向</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="website-error"></div>
+    <div class="loading-line" id="website-loading" style="display:none;"></div>
+
+    <div id="website-preview-wrap" style="display:none;">
+      <div class="website-preview">
+        <div class="preview-toolbar">
+          <div class="preview-dots">
+            <div class="preview-dot" style="background:#FF5F57;"></div>
+            <div class="preview-dot" style="background:#FFBD2E;"></div>
+            <div class="preview-dot" style="background:#28CA41;"></div>
+          </div>
+          <div class="preview-url" id="preview-url">careertwin.com/你的名字</div>
+        </div>
+        <iframe class="preview-frame" id="preview-frame" sandbox="allow-scripts"></iframe>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-copper" onclick="downloadWebsite()">下载 HTML 文件</button>
+        <button class="btn btn-outline" onclick="regenerateWebsite()">重新生成</button>
+        <button class="btn btn-outline" onclick="document.getElementById('style-grid').scrollIntoView()">换一个风格</button>
+      </div>
+    </div>
+
+    <div class="btn-row" id="website-generate-btn">
+      <button class="btn btn-ink" onclick="generateWebsite()" id="gen-btn" disabled>选择风格后生成网站 →</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// ── STATE ──
+// ── Demo 配置：预填 Worker 和 Key，发出去的 demo 开箱即用 ──
+// 正式上线前建议移除 apiKey，改为后端代理
+const DEMO_WORKER = 'https://cold-frost-99ee.inhermind227.workers.dev';
+const DEMO_KEY    = '';  // 留空，用户需自己填写；或填入测试 Key
+
+const state = {
+  apiKey: DEMO_KEY,
+  workerUrl: DEMO_WORKER,
+  resumeText: '',
+  twin: null,
+  selectedJob: null,
+  fullJD: '',        // 用户粘贴的完整 JD 文本（优先使用）
+  resumeData: null,
+  selectedStyle: null,
+  websiteHtml: '',
+  photos: [],
+  selectedPhoto: null
+};
+
+// ── API KEY ──
+// 页面加载时预填配置
+window.addEventListener('DOMContentLoaded', () => {
+  const workerEl = document.getElementById('worker-url');
+  const keyEl = document.getElementById('api-key');
+  if (workerEl && DEMO_WORKER) workerEl.value = DEMO_WORKER;
+  if (keyEl && DEMO_KEY) keyEl.value = DEMO_KEY;
+  if (DEMO_WORKER || DEMO_KEY) checkApiKey();
+});
+
+function checkApiKey() {
+  const k = document.getElementById('api-key').value.trim();
+  const w = document.getElementById('worker-url').value.trim();
+  state.apiKey = k;
+  state.workerUrl = w.replace(/\/+$/, ''); // 去掉末尾斜杠
+  const el = document.getElementById('api-status');
+
+  const keyOk = k.length > 20;
+  const workerOk = w.startsWith('https://') && w.includes('workers.dev');
+
+  if (!k && !w) { el.textContent = ''; return; }
+
+  if (keyOk && workerOk) {
+    el.textContent = '✓ 已就绪，可以开始使用';
+    el.className = 'api-status ok';
+  } else if (!workerOk && w) {
+    el.textContent = 'Worker 地址格式有误（需含 workers.dev）';
+    el.className = 'api-status err';
+  } else if (!keyOk && k) {
+    el.textContent = 'API Key 格式可能有误';
+    el.className = 'api-status err';
+  } else {
+    el.textContent = '请填写 Worker 地址和 API Key';
+    el.className = 'api-status err';
+  }
+}
+
+// ── STEP NAV ──
+function goStep(n) {
+  document.querySelectorAll('.pane').forEach((p,i) => p.classList.toggle('active', i+1===n));
+  document.querySelectorAll('.step-item').forEach((s,i) => {
+    s.classList.toggle('active', i+1===n);
+  });
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function markDone(n) {
+  const si = document.getElementById('si'+n);
+  if (si) { si.classList.add('done'); si.classList.remove('active'); }
+}
+
+// ── MINIMAX CALL ──
+// 测试确认：Anthropic 兼容格式，endpoint /anthropic/v1/messages，Authorization Bearer
+async function callMiniMax(systemPrompt, userContent, isJson = false) {
+  if (!state.workerUrl) throw new Error('请先填写 Cloudflare Worker 代理地址');
+  if (!state.apiKey) throw new Error('请先填写 MiniMax API Key');
+
+  const cleanKey = Array.from(state.apiKey)
+    .filter(c => c.charCodeAt(0) >= 0x20 && c.charCodeAt(0) <= 0x7E)
+    .join('').trim();
+  if (!cleanKey) throw new Error('API Key 格式有误，请重新粘贴');
+
+  // Anthropic 兼容格式（测试已验证通过）
+  const body = {
+    model: 'MiniMax-M2.5',
+    max_tokens: 8000,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userContent }]
+  };
+
+  const headers = new Headers();
+  headers.append('content-type', 'application/json');
+  headers.append('Authorization', 'Bearer ' + cleanKey);
+
+  const res = await fetch(state.workerUrl + '/anthropic/v1/messages', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || err.message || `API 错误 ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  // Anthropic 格式：content 数组，只取 type=text 的块，跳过 thinking 块
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('');
+
+  // 如果只有 thinking 没有 text，说明 token 不够
+  if (!text) {
+    const hasThinking = (data.content || []).some(b => b.type === 'thinking');
+    throw new Error(hasThinking
+      ? 'AI 思考过程耗尽了 token，未能输出结果，请重试'
+      : 'API 返回内容为空，请重试');
+  }
+
+  if (isJson) {
+    // 剥掉可能的 markdown 代码块包装
+    const stripped = text
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```\s*$/i, '')
+      .trim();
+    const match = stripped.match(/(\{[\s\S]*\})/);
+    try {
+      return JSON.parse(match ? match[1] : stripped);
+    } catch {
+      throw new Error('AI 返回格式解析失败，请重试');
+    }
+  }
+  return text;
+}
+
+// ── FILE UPLOAD ──
+// 读取单个文件，返回 Promise<string>
+// 读取文件为 base64
+// ── 文件解析（浏览器端）：文本 + 照片 ──
+
+// 初始化 PDF.js worker
+function initPDFjs() {
+  const lib = window['pdfjs-dist/build/pdf'];
+  if (lib && !lib.GlobalWorkerOptions.workerSrc) {
+    lib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  return lib;
+}
+
+// PDF → { text, photos[] }
+async function extractPDF(file) {
+  const pdfjsLib = initPDFjs();
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  const pages = [];
+  const photos = [];
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+
+    // 提取文字
+    const tc = await page.getTextContent();
+    pages.push(tc.items.map(item => item.str).join(' '));
+
+    // 提取图片
+    const ops = await page.getOperatorList();
+    const imgKeys = Object.keys(page.objs._objs || {});
+    for (const key of imgKeys) {
+      if (!key.startsWith('img_')) continue;
+      try {
+        const img = await new Promise((res, rej) => {
+          page.objs.get(key, obj => obj ? res(obj) : rej(new Error('no obj')));
+        });
+        if (!img || !img.data || img.width < 60 || img.height < 60) continue;
+        // 宽高比接近人像照片（0.5~1.5）的才收录
+        const ratio = img.width / img.height;
+        if (ratio < 0.4 || ratio > 2.0) continue;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        const imgData = ctx.createImageData(img.width, img.height);
+        // PDF.js 图片可能是 RGBA 或 RGB
+        if (img.data.length === img.width * img.height * 4) {
+          imgData.data.set(img.data);
+        } else if (img.data.length === img.width * img.height * 3) {
+          for (let p = 0; p < img.width * img.height; p++) {
+            imgData.data[p*4]   = img.data[p*3];
+            imgData.data[p*4+1] = img.data[p*3+1];
+            imgData.data[p*4+2] = img.data[p*3+2];
+            imgData.data[p*4+3] = 255;
+          }
+        } else continue;
+        ctx.putImageData(imgData, 0, 0);
+        photos.push(canvas.toDataURL('image/jpeg', 0.85));
+      } catch { /* 跳过无法提取的图片 */ }
+    }
+  }
+  return { text: pages.join('\n'), photos };
+}
+
+// Word → { text, photos[] }，使用 mammoth
+async function extractWord(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const photos = [];
+
+  // 提取图片：mammoth convertImage 回调
+  const imageHandler = mammoth.images.imgElement(async (image) => {
+    const b64 = await image.read('base64');
+    const dataUrl = `data:${image.contentType};base64,${b64}`;
+    // 尺寸过滤：先画到 canvas 检测
+    await new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.naturalWidth / img.naturalHeight;
+        if (img.naturalWidth >= 60 && img.naturalHeight >= 60 && ratio >= 0.4 && ratio <= 2.0) {
+          photos.push(dataUrl);
+        }
+        res();
+      };
+      img.onerror = res;
+      img.src = dataUrl;
+    });
+    return { src: dataUrl };
+  });
+
+  const textResult = await mammoth.extractRawText({ arrayBuffer });
+  // 同时跑一次带图片提取的转换（extractRawText 不触发 imageHandler）
+  try {
+    await mammoth.convertToHtml({ arrayBuffer }, { convertImage: imageHandler });
+  } catch { /* 图片提取失败不影响文字 */ }
+
+  return { text: textResult.value || '', photos };
+}
+
+// 统一入口：根据文件类型选择解析方式，返回 { text, photos }
+async function parseFile(file) {
+  const name = file.name.toLowerCase();
+  try {
+    if (name.endsWith('.pdf')) {
+      const result = await extractPDF(file);
+      // extractPDF 内部错误时可能返回 undefined，加防御
+      return { text: result?.text || '', photos: result?.photos || [] };
+    } else if (name.endsWith('.docx') || name.endsWith('.doc')) {
+      const result = await extractWord(file);
+      return { text: result?.text || '', photos: result?.photos || [] };
+    } else {
+      const text = await file.text().catch(() => '');
+      return { text, photos: [] };
+    }
+  } catch (err) {
+    console.warn(`${file.name} 解析失败:`, err.message);
+    return { text: '', photos: [] };
+  }
+}
+
+// 处理多文件上传
+async function handleFiles(files) {
+  if (!files.length) return;
+  const fileArr = Array.from(files);
+  const zone = document.getElementById('upload-zone');
+
+  zone.classList.add('uploading');
+  zone.style.pointerEvents = 'none';
+  document.getElementById('upload-icon').textContent = '⏳';
+  document.getElementById('upload-title').textContent =
+    fileArr.length > 1 ? `正在解析 ${fileArr.length} 份简历…` : `正在解析：${fileArr[0].name}`;
+  document.getElementById('upload-desc').textContent = '使用 PDF.js / mammoth 解析，支持 PDF 和 Word';
+  document.getElementById('upload-hint').textContent = '';
+
+  try {
+    const results = [];
+    for (let i = 0; i < fileArr.length; i++) {
+      const f = fileArr[i];
+      document.getElementById('upload-desc').textContent =
+        `正在解析第 ${i+1}/${fileArr.length} 份：${f.name}`;
+      const result = await parseFile(f);
+      results.push({ file: f, ...result });
+    }
+
+    // 合并文本
+    const combined = results
+      .map((r, i) => `===== 第${i+1}份简历：${fileArr[i].name} =====\n${r.text}`)
+      .join('\n\n')
+      .substring(0, 16000);
+    state.resumeText = combined;
+    state.fileNames = fileArr.map(f => f.name);
+
+    // 收集所有照片（照片提取失败不影响主流程）
+    const allPhotos = [];
+    try {
+      results.forEach(r => {
+        (r.photos || []).forEach((dataUrl, idx) => {
+          allPhotos.push({
+            dataUrl,
+            fileName: r.file.name,
+            fileDate: r.file.lastModified,
+            index: idx
+          });
+        });
+      });
+      allPhotos.sort((a, b) => b.fileDate - a.fileDate);
+    } catch (photoErr) {
+      console.warn('照片提取失败（不影响简历解析）:', photoErr);
+    }
+    state.photos = allPhotos;
+    state.selectedPhoto = allPhotos.length > 0 ? allPhotos[0].dataUrl : null;
+
+    const totalKB = fileArr.reduce((s, f) => s + f.size, 0) / 1024;
+    const photoCount = allPhotos.length;
+
+    zone.classList.remove('uploading');
+    zone.classList.add('done');
+    zone.style.pointerEvents = 'auto';
+    document.getElementById('upload-icon').textContent = '✓';
+    document.getElementById('upload-title').textContent =
+      fileArr.length > 1 ? `已解析 ${fileArr.length} 份简历` : '简历解析完成';
+    document.getElementById('upload-desc').textContent =
+      fileArr.map(f => f.name).join('、') +
+      `（共 ${totalKB.toFixed(0)} KB${photoCount > 0 ? `，提取到 ${photoCount} 张照片` : '，未检测到照片'}）`;
+    document.getElementById('upload-actions').style.display = 'flex';
+    markDone(1);
+  } catch (err) {
+    zone.classList.remove('uploading');
+    zone.style.pointerEvents = 'auto';
+    zone.classList.add('done');
+    document.getElementById('upload-icon').textContent = '⚠️';
+    document.getElementById('upload-title').textContent = '解析遇到问题，但仍可继续';
+    document.getElementById('upload-desc').textContent = err.message || '文件读取异常';
+    // catch 里也显示按钮，让用户能继续操作
+    document.getElementById('upload-actions').style.display = 'flex';
+    showError('upload-error', `提示：${err.message || '文件解析异常'}。如果是 PDF 内嵌图片提取失败，文字内容通常仍可正常解析，可以继续点击「开始 AI 解析」尝试。`);
+  }
+}
+
+// drag & drop
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
+
+// ── ANALYZE RESUME ──
+async function analyzeResume() {
+  if (!state.resumeText) { showError('upload-error', '请先上传简历文件'); return; }
+  if (!state.apiKey) { showError('upload-error', '请先在左侧填写 MiniMax API Key'); return; }
+
+  goStep(2);
+  document.getElementById('twin-loading').style.display = 'block';
+
+  try {
+    const result = await callMiniMax(
+      `你是一个专业的职业顾问和简历分析师。请从用户提供的简历文本中提取结构化信息，返回 JSON 格式。
+
+返回格式：
+{
+  "name": "姓名",
+  "title": "当前职位或目标职位名称，只写职位本身如「品牌经理」「产品总监」，不含公司名、平台名、行业名",
+  "industry": "所在行业",
+  "years": "工作年限（数字）",
+  "summary": "50字以内的职业概括",
+  "contact": "联系方式（如有）",
+  "experience": [{"company":"公司","role":"职位","period":"时间","highlights":["成就1","成就2"]}],
+  "skills": ["技能1","技能2"],
+  "key_tags": ["核心能力标签，5-8个，简短有力"],
+  "education": "最高学历 · 学校",
+  "ai_question": "一个追问问题，要求补充某段经历的量化数据，用「你」称呼用户，口语化"
+}`,
+      `以下是简历内容，请提取结构化信息：\n\n${state.resumeText}`
+    , true);
+
+    state.twin = result;
+    renderTwin(result);
+    populateJobs(result);
+  } catch (err) {
+    goStep(1);
+    showError('upload-error', `解析失败：${err.message}`);
+  } finally {
+    document.getElementById('twin-loading').style.display = 'none';
+  }
+}
+
+function renderTwin(t) {
+  // ── 照片条 ──
+  const photoWrap = document.createElement('div');
+  if (state.photos.length > 0) {
+    photoWrap.className = 'photo-strip';
+    const mainImg = `<img class="photo-avatar" id="main-photo" src="${state.selectedPhoto}" alt="简历照片">`;
+    const thumbsHtml = state.photos.map((p, i) =>
+      `<img class="photo-thumb ${i === 0 ? 'selected' : ''}"
+            src="${p.dataUrl}"
+            title="${p.fileName}"
+            onclick="selectPhoto(this, ${i})">`
+    ).join('');
+    photoWrap.innerHTML = `
+      ${mainImg}
+      <div class="photo-info">
+        <h4>简历照片</h4>
+        <p>已从简历中提取 ${state.photos.length} 张照片，已自动选择最新版本简历的照片。<br>
+           点击缩略图切换，或
+           <span onclick="triggerPhotoUpload()" style="color:var(--copper);cursor:pointer;border-bottom:1px solid var(--border);">手动上传新照片</span>。
+        </p>
+        <div class="photo-thumbs">${thumbsHtml}</div>
+      </div>`;
+  } else {
+    photoWrap.className = 'photo-strip';
+    photoWrap.innerHTML = `
+      <div class="photo-avatar-placeholder">🙂</div>
+      <div class="photo-info">
+        <h4>未检测到照片</h4>
+        <p>简历中未找到嵌入图片。</p>
+        <button onclick="triggerPhotoUpload()" style="margin-top:8px;padding:6px 14px;background:var(--ink);color:var(--cream);border:none;border-radius:100px;font-size:12px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;">手动上传照片</button>
+      </div>`;
+  }
+
+  // 插入到 twin-content 最顶部
+  const twinContent = document.getElementById('twin-content');
+  const existingStrip = document.getElementById('photo-strip-wrap');
+  if (existingStrip) existingStrip.remove();
+  photoWrap.id = 'photo-strip-wrap';
+  twinContent.insertBefore(photoWrap, twinContent.firstChild);
+
+  // ── 信息卡片 ──
+  const grid = document.getElementById('twin-grid');
+  grid.innerHTML = `
+    <div class="twin-card">
+      <span class="tc-label">基本信息</span>
+      <div class="tc-content">
+        <strong style="font-family:'Lora',serif;font-size:16px;color:var(--ink);">${t.name || '—'}</strong><br>
+        <span style="color:var(--copper);font-size:13px;">${t.title || ''}</span><br>
+        <span style="font-size:12px;color:var(--ink-4);">📍 ${t.industry || ''} · ${t.years || '?'} 年经验</span>
+      </div>
+    </div>
+    <div class="twin-card">
+      <span class="tc-label">职业概括</span>
+      <div class="tc-content">${t.summary || '—'}</div>
+    </div>
+    <div class="twin-card" style="grid-column:1/-1;">
+      <span class="tc-label">工作经历</span>
+      <div class="tc-content">
+        ${(t.experience || []).slice(0,2).map(e => `
+          <div style="margin-bottom:10px;">
+            <strong>${e.role}</strong> · ${e.company} <span style="color:var(--ink-4);font-size:12px;">${e.period||''}</span>
+            <ul style="margin-top:4px;padding-left:16px;">
+              ${(e.highlights||[]).map(h=>`<li>${h}</li>`).join('')}
+            </ul>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  const tagsEl = document.getElementById('twin-tags');
+  tagsEl.innerHTML = (t.key_tags || []).map((tag, i) =>
+    `<span class="twin-tag ${i < 3 ? 'key' : ''}">${tag}</span>`
+  ).join('');
+
+  document.getElementById('aq-question').textContent = t.ai_question || '你最有成就感的一段工作经历，最终结果是什么？可以量化吗？';
+  document.getElementById('twin-content').style.display = 'block';
+  markDone(2);
+
+  // auto-select style based on industry
+  autoSelectStyle(t.industry || '', t.title || '');
+}
+
+// ── AI QUESTION ──
+async function submitAnswer() {
+  const val = document.getElementById('aq-input').value.trim();
+  if (!val) return;
+
+  document.getElementById('aq-answer-area').style.display = 'none';
+  const answerEl = document.getElementById('aq-answer');
+  answerEl.style.display = 'block';
+  answerEl.textContent = '正在更新分身…';
+
+  try {
+    const enhanced = await callMiniMax(
+      '你是职业顾问，将用户的口语化回答转化为简历中的专业成就描述，一句话，包含量化数据，开头用动词，不超过40字。',
+      `问题：${document.getElementById('aq-question').textContent}\n用户回答：${val}`
+    );
+    answerEl.innerHTML = `<strong style="color:var(--copper-l);">✓ 已更新到分身：</strong><br>${enhanced}`;
+    if (state.twin) state.twin.enhanced_achievement = enhanced;
+  } catch (e) {
+    answerEl.textContent = `已记录：${val}`;
+    if (state.twin) state.twin.enhanced_achievement = val;
+  }
+
+  document.getElementById('twin-next').style.display = 'flex';
+}
+
+function skipAnswer() {
+  document.getElementById('aq-answer-area').style.display = 'none';
+  document.getElementById('twin-next').style.display = 'flex';
+}
+
+// ── JOBS ──
+function populateJobs(twin) {
+  const industry = twin.industry || '';
+  const title = twin.title || '';
+
+  // Generate contextual job listings based on parsed profile
+  // 清洗职位名：去掉常见招聘平台前缀（AI 偶尔会把简历来源混进来）
+  const PLATFORM_PREFIXES = [
+    '智联招聘', '前程无忧', '猎聘', 'Boss直聘', 'BOSS直聘', 'LinkedIn',
+    '拉勾', '拉勾网', '58同城', '赶集', '脉脉', '实习僧', '应届生求职'
+  ];
+  let baseTitle = title.trim();
+  for (const p of PLATFORM_PREFIXES) {
+    // 去掉「平台名·」「平台名-」「平台名 」开头
+    const re = new RegExp('^' + p + '(?:[·\\s\\-]|\\s)+', 'i');
+    baseTitle = baseTitle.replace(re, '').trim();
+  }
+  // 同时清洗 industry 字段里的平台名
+  let cleanIndustry = industry.trim();
+  for (const p of PLATFORM_PREFIXES) {
+    cleanIndustry = cleanIndustry.replace(new RegExp(p, 'gi'), '').trim();
+  }
+  const tags0 = (twin.key_tags || []).slice(0, 2).join('、');
+
+  const jobs = [
+    {
+      title: `${baseTitle}（高级）`,
+      company: '字节跳动',
+      city: '北京',
+      salary: '25–40k',
+      type: '大厂 · 互联网',
+      score: 93,
+      tags: [
+        {text: `✓ ${cleanIndustry||'行业'}背景`, cls:'ok'},
+        {text: '✓ 薪资符合', cls:'ok'},
+        {text: '✓ 北京', cls:'ok'}
+      ],
+      jd: `负责${baseTitle}核心职责，统筹跨部门资源推动项目落地；具备${tags0 || '相关领域'}能力；有大型项目端到端执行经验；数据驱动，强跨团队协作能力；${cleanIndustry ? cleanIndustry + '行业背景优先。' : ''}`
+    },
+    {
+      title: `${baseTitle} · 资深`,
+      company: '美团',
+      city: '北京',
+      salary: '20–35k',
+      type: '上市公司',
+      score: 87,
+      tags: [
+        {text: '✓ 职位匹配', cls:'ok'},
+        {text: '✓ 薪资符合', cls:'ok'},
+        {text: '? 需本地经验', cls:'warn'}
+      ],
+      jd: `负责${cleanIndustry||'业务'}方向策略制定与落地执行；管理项目全生命周期；与产品、运营、技术团队紧密协作；通过数据分析持续优化业务表现。`
+    },
+    {
+      title: `Senior ${baseTitle}`,
+      company: 'Shopee / Sea Group',
+      city: '上海 / 可远程',
+      salary: '30–50k',
+      type: '出海方向',
+      score: 81,
+      tags: [
+        {text: '✓ 出海薪资溢价', cls:'ok'},
+        {text: '✓ 可远程', cls:'ok'},
+        {text: '? 需英语', cls:'warn'}
+      ],
+      jd: `负责东南亚市场${baseTitle}工作；需跨文化沟通能力；熟悉海外平台运营逻辑；英语流利，有出海或跨国团队经验优先。`
+    }
+  ];
+
+  const container = document.getElementById('jobs-content');
+  container.innerHTML = `<p style="font-size:11px;color:var(--ink-4);letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;">根据你的分身，找到 <strong style="color:var(--ink)">${jobs.length + Math.floor(Math.random()*150+50)}</strong> 个匹配职位，以下为最优匹配</p>`;
+
+  jobs.forEach((j, idx) => {
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.innerHTML = `
+      <div class="jc-top">
+        <div>
+          <div class="jc-title">${j.title}</div>
+          <div class="jc-co">${j.company} · ${j.city} · ${j.type}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="jc-salary">${j.salary}</div>
+          <div class="jc-score">分身匹配 ${j.score}%</div>
+        </div>
+      </div>
+      <div class="jc-tags">${j.tags.map(t=>`<span class="jc-tag ${t.cls}">${t.text}</span>`).join('')}</div>
+      <div class="jc-jd" id="jdjd${idx}">
+        <h5>职位描述</h5>
+        <ul>${j.jd.split('；').filter(Boolean).map(s=>`<li>${s}</li>`).join('')}</ul>
+      </div>`;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.job-card').forEach(c => {
+        c.classList.remove('selected');
+        c.querySelector('.jc-jd').classList.remove('vis');
+      });
+      card.classList.add('selected');
+      card.querySelector('.jc-jd').classList.add('vis');
+      state.selectedJob = j;
+      document.getElementById('jobs-next').style.display = 'flex';
+      document.getElementById('selected-job-label').textContent = `已选：${j.title} @ ${j.company}`;
+    });
+    container.appendChild(card);
+  });
+
+  document.getElementById('jobs-loading').style.display = 'none';
+}
+
+// ── RESUME GENERATION ──
+async function generateResume() {
+  if (!state.selectedJob || !state.twin) return;
+
+  document.getElementById('resume-loading').style.display = 'block';
+  document.getElementById('resume-content').innerHTML = '';
+  document.getElementById('resume-next').style.display = 'none';
+
+  const t = state.twin;
+  const job = state.selectedJob;
+  // 优先用用户粘贴的完整 JD，其次用卡片里的描述
+  const jdFull = state.fullJD || job.jd || '';
+  const achievement = t.enhanced_achievement || '';
+
+  // 在 Step 4 顶部展示 JD 摘要，让用户确认
+  const jdHint = document.getElementById('resume-jd-hint');
+  const jdPreview = document.getElementById('resume-jd-preview');
+  if (jdHint && jdPreview) {
+    jdPreview.textContent = jdFull.substring(0, 120) + (jdFull.length > 120 ? '…' : '');
+    jdHint.style.display = 'block';
+  }
+
+  try {
+    const systemPrompt = `你是资深职业顾问，专门根据目标岗位的 JD（职位描述）定制简历。
+
+你的任务：
+1. 仔细阅读 JD，提取岗位的【核心关键词】【硬性要求】【加分项】
+2. 从用户的职场分身中，找出与这些要求最匹配的经历、技能、成就
+3. 用 JD 中的关键词重写经历描述（ATS 友好），突出与该岗位的相关性
+4. 不同岗位的输出必须有实质差异——侧重点、关键词、经历排序都应不同
+
+返回严格的 JSON，不要任何 markdown 包装：
+{
+  "name": "姓名",
+  "target_title": "针对该JD的职位头衔（用JD里出现的职位名）",
+  "jd_keywords": ["从JD里提取的5-8个核心关键词，用于校验匹配度"],
+  "summary": "50字内职业摘要，必须出现JD里的至少2个关键词，强调与该岗位最匹配的能力",
+  "highlights": [
+    "亮点1：用JD关键词开头，含量化数据，直接回应JD要求",
+    "亮点2：对应JD里的另一个核心要求",
+    "亮点3：对应JD里的加分项或差异化能力"
+  ],
+  "experience": [
+    {
+      "company": "公司名",
+      "role": "职位名",
+      "period": "时间段",
+      "bullets": [
+        "用JD关键词重写的职责/成就1（含数字）",
+        "用JD关键词重写的职责/成就2（含数字）",
+        "用JD关键词重写的职责/成就3"
+      ]
+    }
+  ],
+  "skills": ["按与JD的相关性排序的技能列表，最相关的排最前"],
+  "education": "学历 · 学校"
+}`;
+
+    const userPrompt = `【目标职位 JD】
+${jdFull || `职位：${job.title}
+公司：${job.company}`}
+
+【我的职场分身数据】
+姓名：${t.name}
+当前职位：${t.title}
+工作年限：${t.years} 年
+行业背景：${t.industry}
+核心标签：${(t.key_tags || []).join('、')}
+补充亮点：${achievement}
+
+工作经历：
+${(t.experience || []).map(e =>
+  `${e.company} · ${e.role}（${e.period || ''}）
+成就：${(e.highlights || []).join('；')}`
+).join('\n\n')}
+
+技能：${(t.skills || []).join('、')}
+教育：${t.education || ''}
+
+请根据上方 JD 的关键词和要求，重新组织我的经历，生成高度匹配的定制简历 JSON。`;
+
+    const result = await callMiniMax(systemPrompt, userPrompt, true);
+    state.resumeData = result;
+    renderResume(result);
+    markDone(4);
+  } catch (err) {
+    document.getElementById('resume-content').innerHTML =
+      `<div class="error-box vis">生成失败：${err.message}</div>`;
+  } finally {
+    document.getElementById('resume-loading').style.display = 'none';
+  }
+}
+
+function renderResume(r) {
+  // 清洗简历内容：去掉经历中错误混入的公司名前缀
+  const cleanBullet = (b) => b.replace(/^(字节跳动|美团|Shopee|Sea Group)[·\s·]+/i, '').trim();
+
+  const keywordsHtml = (r.jd_keywords || []).length > 0
+    ? `<div style="margin-bottom:16px;padding:10px 14px;background:rgba(74,122,90,0.06);border:1px solid rgba(74,122,90,0.15);border-radius:3px;">
+        <span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-right:8px;">JD 关键词匹配</span>
+        ${(r.jd_keywords||[]).map(k=>`<span style="display:inline-block;padding:2px 9px;margin:2px;border:1px solid rgba(74,122,90,0.3);border-radius:100px;font-size:11px;color:var(--green);">${k}</span>`).join('')}
+      </div>` : '';
+
+  const html = `
+  ${keywordsHtml}
+  <div class="resume-paper">
+    <div class="rp-name">${r.name || state.twin?.name || '—'}</div>
+    <div class="rp-title">${r.target_title || r.title || ''}</div>
+    <div class="rp-contact">${state.twin?.contact || '请补充联系方式'} &nbsp;|&nbsp; ${r.education || state.twin?.education || ''}</div>
+
+    <div class="rp-section">
+      <div class="rp-section-h">核心匹配亮点</div>
+      ${(Array.isArray(r.highlights) ? r.highlights : typeof r.highlights === 'string' ? r.highlights.split(/[;；\n]/).filter(Boolean) : []).map(h=>`<div class="rp-highlight">${String(h).trim()}</div>`).join('')}
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-section-h">职业摘要</div>
+      <p style="font-size:13px;color:var(--ink-3);line-height:1.8;">${r.summary||''}</p>
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-section-h">工作经历</div>
+      ${(r.experience||[]).map(e=>`
+        <div class="rp-job">
+          <div class="rp-job-title">${e.role} · ${e.company}</div>
+          <div class="rp-job-meta">${e.period||''}</div>
+          <ul>${(Array.isArray(e.bullets) ? e.bullets : typeof e.bullets === 'string' ? e.bullets.split(/[;；\n]/).filter(Boolean) : []).map(b=>`<li>${cleanBullet(String(b).trim())}</li>`).join('')}</ul>
+        </div>`).join('')}
+    </div>
+
+    <div class="rp-section">
+      <div class="rp-section-h">技能</div>
+      <div class="rp-skills">${(Array.isArray(r.skills) ? r.skills : typeof r.skills === 'string' ? r.skills.split(/[,，、\n]/).filter(Boolean) : []).map(s=>`<span class="rp-skill">${String(s).trim()}</span>`).join('')}</div>
+    </div>
+  </div>`;
+
+  document.getElementById('resume-content').innerHTML = html;
+  document.getElementById('resume-next').style.display = 'flex';
+}
+
+// ── WEBSITE STYLE ──
+function autoSelectStyle(industry, title) {
+  const text = (industry + title).toLowerCase();
+  let recommended = 'editorial';
+  if (text.includes('品牌') || text.includes('市场') || text.includes('公关') || text.includes('传播')) recommended = 'editorial';
+  else if (text.includes('产品') || text.includes('技术') || text.includes('研发') || text.includes('工程')) recommended = 'modern';
+  else if (text.includes('内容') || text.includes('媒体') || text.includes('创意') || text.includes('设计')) recommended = 'magazine';
+  else if (text.includes('咨询') || text.includes('金融') || text.includes('投资')) recommended = 'minimal';
+  else if (text.includes('运营') || text.includes('增长') || text.includes('电商')) recommended = 'warm';
+
+  document.querySelectorAll('.style-card').forEach(c => {
+    if (c.dataset.style === recommended) {
+      c.innerHTML = c.innerHTML; // refresh
+      c.insertAdjacentHTML('afterbegin', '<span style="position:absolute;top:8px;right:8px;background:var(--copper);color:white;font-size:9px;padding:2px 7px;border-radius:2px;z-index:1;font-weight:500;">AI 推荐</span>');
+      c.style.position = 'relative';
+    }
+  });
+}
+
+function selectStyle(card) {
+  document.querySelectorAll('.style-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.selectedStyle = card.dataset.style;
+  document.getElementById('gen-btn').disabled = false;
+  document.getElementById('gen-btn').textContent = `生成「${card.querySelector('h4').textContent}」个人网站 →`;
+}
+
+// ── WEBSITE GENERATION ──
+async function generateWebsite() {
+  if (!state.selectedStyle || !state.twin) return;
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.textContent = '生成中…';
+  document.getElementById('website-loading').style.display = 'block';
+  document.getElementById('website-preview-wrap').style.display = 'none';
+  hideError('website-error');
+
+  const styleDesc = {
+    editorial: '极简人文风：奶油白背景(#FAF8F3)，衬线字体(Georgia)，铜色点缀(#A0622A)，大量留白，文字驱动排版，类似高端杂志',
+    modern:    '现代深色风：深黑背景(#0F1117)，亮绿色点缀(#00FF88)，无衬线字体，霓虹感，科技感强',
+    magazine:  '杂志排版风：暖白背景，红橙色(#C0522A)点缀，大标题撑版面，不对称布局，充满视觉张力',
+    minimal:   '极度极简风：纯白背景，只用黑色文字，无颜色，靠字号和间距制造层次，像苹果官网',
+    warm:      '渐变活力风：深紫到绿色渐变背景(#2D1B69 → #11998E)，白色文字，活力感强',
+    retro:     '复古终端风：黑色背景(#0A0A00)，绿色等宽字体(#00FF41)，像老式命令行终端'
+  }[state.selectedStyle];
+
+  const t = state.twin;
+  const r = state.resumeData;
+  const name = r?.name || t?.name || '你的名字';
+
+  try {
+    const websiteCode = await callMiniMax(
+      `你是顶级前端设计师，擅长生成精美的个人主页 HTML。请根据用户信息和风格要求，生成一个完整的单页个人网站。
+
+设计风格：${styleDesc}
+
+要求：
+1. 输出完整的 HTML 文件（含内联 CSS 和 JS）
+2. 包含：导航栏、英雄区（姓名+职位+一句话）、关于我、工作经历、技能、联系方式
+3. 风格要严格遵循描述，有设计感，不能是普通模板
+4. 响应式，移动端友好
+5. 动画要克制，以内容为主
+6. 【重要】只输出完整 HTML 文件内容，从 <!DOCTYPE html> 开始，到 </html> 结束，不要任何 markdown 代码块包装，不要任何说明文字，不要 \`\`\`html 标记`,
+      `用户信息：
+姓名：${name}
+职位：${t.title || ''}
+行业：${t.industry || ''}
+概括：${t.summary || ''}
+工作经历：${JSON.stringify((r?.experience || t?.experience || []).slice(0,2))}
+技能：${(r?.skills || t?.skills || []).join('、')}
+核心亮点：${(r?.highlights || t?.key_tags || []).join('；')}
+教育：${t.education || ''}
+${state.selectedPhoto ? '有照片：是（已提取自简历，请在网站 <img> 中使用 id="user-photo" 的图片元素，src 先留空占位）' : '有照片：否（使用姓名首字母头像占位）'}
+
+风格：${styleDesc}
+
+请生成个人网站 HTML。`
+    );
+
+    // 提取 HTML：去掉 AI 可能添加的 markdown 代码块包装
+    let html = websiteCode
+      .replace(/^```html\s*/i, '')  // 去掉开头的 ```html
+      .replace(/^```\s*/i, '')       // 去掉开头的 ```
+      .replace(/\s*```\s*$/i, '')   // 去掉结尾的 ```
+      .trim();
+
+    // 如果还是没有 doctype/html 标签，尝试从中间提取
+    if (!html.toLowerCase().startsWith('<!doctype') && !html.toLowerCase().startsWith('<html')) {
+      const m = html.match(/<!DOCTYPE[\s\S]*<\/html>/i) || html.match(/<html[\s\S]*<\/html>/i);
+      html = m ? m[0] : html;
+    }
+
+    if (!html || html.length < 200) {
+      throw new Error('AI 未能生成有效的 HTML，请重试');
+    }
+
+    state.websiteHtml = html;
+    const frame = document.getElementById('preview-frame');
+    frame.srcdoc = html;
+
+    // 把真实照片注入 iframe（等待加载完成后替换占位 src）
+    if (state.selectedPhoto) {
+      frame.onload = () => {
+        try {
+          const photoEl = frame.contentDocument.getElementById('user-photo');
+          if (photoEl) {
+            photoEl.src = state.selectedPhoto;
+            photoEl.style.objectFit = 'cover';
+          }
+        } catch { /* 跨域情况下忽略 */ }
+      };
+    }
+    document.getElementById('preview-url').textContent = `careertwin.com/${name.replace(/\s+/g,'-').toLowerCase()}`;
+    document.getElementById('website-preview-wrap').style.display = 'block';
+    document.getElementById('website-generate-btn').style.display = 'none';
+    markDone(5);
+  } catch (err) {
+    showError('website-error', `生成失败：${err.message}`);
+    btn.disabled = false;
+    btn.textContent = '重新生成 →';
+  } finally {
+    document.getElementById('website-loading').style.display = 'none';
+  }
+}
+
+function regenerateWebsite() {
+  document.getElementById('website-generate-btn').style.display = 'flex';
+  document.getElementById('gen-btn').disabled = false;
+  document.getElementById('gen-btn').textContent = '重新生成 →';
+  document.getElementById('website-preview-wrap').style.display = 'none';
+  generateWebsite();
+}
+
+function downloadWebsite() {
+  if (!state.websiteHtml) return;
+  const name = state.twin?.name || 'portfolio';
+  const blob = new Blob([state.websiteHtml], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${name}-portfolio.html`;
+  a.click();
+}
+
+// ── STEP INTERCEPTS ──
+const origGoStep = goStep;
+window.goStep = function(n) {
+  if (n === 4 && !state.resumeData) {
+    origGoStep(4);
+    generateResume();
+    return;
+  }
+  origGoStep(n);
+};
+
+// ── UTILS ──
+// ── JD 输入处理 ──
+function onJDInput(el) {
+  const len = el.value.trim().length;
+  document.getElementById('jd-char-count').textContent = len + ' 字';
+  const btn = document.getElementById('jd-confirm-btn');
+  btn.style.display = len > 50 ? 'inline-block' : 'none';
+}
+
+async function fetchJDFromUrl() {
+  const urlInput = document.getElementById('jd-url-input');
+  const btn = document.getElementById('fetch-url-btn');
+  const status = document.getElementById('fetch-status');
+  const rawUrl = urlInput.value.trim();
+
+  if (!rawUrl) { status.textContent = '请先输入职位页链接'; return; }
+
+  // 补全协议头
+  const targetUrl = rawUrl.startsWith('http') ? rawUrl : 'https://' + rawUrl;
+
+  btn.textContent = '抓取中…';
+  btn.disabled = true;
+  status.textContent = '正在通过 Jina AI 提取页面内容…';
+  status.style.color = 'var(--ink-4)';
+
+  try {
+    const workerBase = state.workerUrl || '';
+    if (!workerBase) throw new Error('请先填写左侧的 Worker 地址');
+
+    const res = await fetch(
+      workerBase + '/fetch-jd?url=' + encodeURIComponent(targetUrl)
+    );
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      throw new Error(data.error || `服务器错误 ${res.status}`);
+    }
+
+    // 成功：填入文本框
+    const textarea = document.getElementById('jd-paste');
+    textarea.value = data.text;
+    onJDInput(textarea);
+
+    status.textContent = `✓ 成功抓取 ${data.length} 字 · 来自 ${new URL(targetUrl).hostname}`;
+    status.style.color = 'var(--green)';
+    urlInput.style.borderColor = 'var(--green)';
+
+    // 自动确认
+    if (data.length > 50) confirmJD();
+
+  } catch (err) {
+    status.textContent = `✗ ${err.message}`;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.textContent = '抓取 JD';
+    btn.disabled = false;
+  }
+}
+
+function confirmJD() {
+  const jdText = document.getElementById('jd-paste').value.trim();
+  if (jdText.length < 50) return;
+
+  state.fullJD = jdText;
+
+  // 从 JD 里快速提取职位名（第一行或前30字）
+  const firstLine = jdText.split(/[\n\n]/)[0].trim().substring(0, 60);
+  state.selectedJob = {
+    title: firstLine || '目标职位',
+    company: '（来自粘贴JD）',
+    salary: '—',
+    jd: jdText
+  };
+
+  // 更新 UI
+  document.getElementById('selected-job-label').textContent = `已选：${firstLine}`;
+  document.getElementById('jobs-next').style.display = 'flex';
+
+  // 高亮提示
+  const textarea = document.getElementById('jd-paste');
+  textarea.style.borderColor = 'var(--green)';
+  document.getElementById('jd-char-count').innerHTML =
+    `<span style="color:var(--green)">✓ ${jdText.length} 字 · JD 已确认，点击下方按钮生成简历</span>`;
+}
+
+// ── 照片选择 ──
+function selectPhoto(thumb, idx) {
+  document.querySelectorAll('.photo-thumb').forEach(t => t.classList.remove('selected'));
+  thumb.classList.add('selected');
+  state.selectedPhoto = state.photos[idx].dataUrl;
+  const mainImg = document.getElementById('main-photo');
+  if (mainImg) mainImg.src = state.selectedPhoto;
+}
+
+function triggerPhotoUpload() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      state.photos.unshift({ dataUrl: ev.target.result, fileName: file.name, fileDate: Date.now(), index: 0 });
+      state.selectedPhoto = ev.target.result;
+      if (state.twin) renderTwin(state.twin);
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.classList.add('vis');
+}
+function hideError(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('vis');
+}
+</script>
+</body>
+</html>
